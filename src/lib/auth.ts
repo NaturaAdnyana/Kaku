@@ -10,6 +10,7 @@ export const auth = betterAuth({
       ...schema,
     },
   }),
+  trustedOrigins: ["http://localhost:3000", "http://192.168.1.18:3000"],
   emailAndPassword: {
     enabled: true,
     autoSignIn: true, // automatically sign in after registration
