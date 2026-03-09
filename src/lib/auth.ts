@@ -10,6 +10,66 @@ export const auth = betterAuth({
       ...schema,
     },
   }),
+  plugins: [
+    {
+      id: "turnstile",
+      hooks: {
+        before: [
+          {
+            matcher: (context) => context.path === "/sign-up/email",
+            handler: async (context) => {
+              const headers = context.headers;
+              let token: string | null = null;
+
+              if (headers instanceof Headers) {
+                token = headers.get("x-turnstile-token");
+              } else if (Array.isArray(headers)) {
+                token =
+                  headers.find(
+                    ([k]) => k.toLowerCase() === "x-turnstile-token",
+                  )?.[1] || null;
+              } else if (headers && typeof headers === "object") {
+                token = (headers as Record<string, string>)[
+                  "x-turnstile-token"
+                ];
+              }
+
+              if (!token) {
+                return {
+                  error: {
+                    message: "Verification failed. Please try again.",
+                    status: 400,
+                  },
+                };
+              }
+
+              const secretKey = process.env.TURNSTILE_SECRET_KEY;
+              const response = await fetch(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                  body: `secret=${secretKey}&response=${token}`,
+                },
+              );
+
+              const outcome = await response.json();
+              if (!outcome.success) {
+                return {
+                  error: {
+                    message: "Invalid verification token. Please try again.",
+                    status: 400,
+                  },
+                };
+              }
+            },
+          },
+        ],
+      },
+    },
+  ],
   trustedOrigins: [
     "http://localhost:3000",
     "http://192.168.1.18:3000",

@@ -13,12 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Mail, Lock, User, Loader2, Languages } from "lucide-react";
+import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PasswordInput,
   PasswordInputStrengthChecker,
 } from "@/components/ui/password-input";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,18 +46,25 @@ export function LoginForm() {
         // redirect to home
         window.location.href = "/";
       } else {
-        const { error: signUpError } = await authClient.signUp.email({
-          email,
-          password,
-          name: name || email.split("@")[0],
-        });
+        const { error: signUpError } = await authClient.signUp.email(
+          {
+            email,
+            password,
+            name: name || email.split("@")[0],
+          },
+          {
+            headers: {
+              "x-turnstile-token": turnstileToken || "",
+            },
+          },
+        );
         if (signUpError) throw new Error(signUpError.message);
 
         // automatically signed in (configured in auth.ts)
         window.location.href = "/";
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -70,11 +79,6 @@ export function LoginForm() {
       >
         <Card className="border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
           <CardHeader className="space-y-1 py-4">
-            <div className="flex justify-center mb-2">
-              <div className="p-3 bg-zinc-900 dark:bg-white rounded-2xl shadow-inner">
-                <Languages className="w-8 h-8 text-white dark:text-zinc-900" />
-              </div>
-            </div>
             <CardTitle className="text-3xl font-extrabold text-center tracking-tight">
               {isLogin ? "Welcome Back" : "Create Account"}
             </CardTitle>
@@ -166,6 +170,25 @@ export function LoginForm() {
                     {!isLogin && <PasswordInputStrengthChecker />}
                   </PasswordInput>
                 </div>
+
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex justify-center pt-2"
+                  >
+                    <Turnstile
+                      siteKey={
+                        process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
+                        "1x00000000000000000000AA"
+                      }
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      options={{
+                        theme: "light",
+                      }}
+                    />
+                  </motion.div>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4 pb-8 px-8">

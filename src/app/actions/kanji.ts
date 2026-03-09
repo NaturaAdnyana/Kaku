@@ -65,7 +65,11 @@ export async function saveKanji(character: string) {
   }
 }
 
-export async function getKanjiList(page: number = 1, limit: number = 20) {
+export async function getKanjiList(
+  page: number = 1,
+  limit: number = 20,
+  search?: string,
+) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -78,10 +82,18 @@ export async function getKanjiList(page: number = 1, limit: number = 20) {
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
+    let whereClause = eq(kanjiList.userId, userId);
+    if (search) {
+      whereClause = and(
+        whereClause,
+        sql`${kanjiList.character} LIKE ${`%${search}%`}`,
+      ) as any;
+    }
+
     const data = await db
       .select()
       .from(kanjiList)
-      .where(eq(kanjiList.userId, userId))
+      .where(whereClause)
       .orderBy(desc(kanjiList.updatedAt))
       .limit(limit)
       .offset(offset);
@@ -90,7 +102,7 @@ export async function getKanjiList(page: number = 1, limit: number = 20) {
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(kanjiList)
-      .where(eq(kanjiList.userId, userId));
+      .where(whereClause);
 
     const totalCount = Number(countResult[0]?.count || 0);
     const hasMore = offset + data.length < totalCount;

@@ -31,9 +31,17 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
     apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
   },
 };
+
+import Providers from "@/components/Providers";
 
 export default function RootLayout({
   children,
@@ -51,9 +59,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <BottomNav />
-          <Toaster />
+          <Providers>
+            {children}
+            <BottomNav />
+            <Toaster />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

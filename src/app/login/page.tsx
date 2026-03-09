@@ -5,6 +5,9 @@ import { LoginForm } from "@/components/LoginForm";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { OwlLogo } from "@/components/OwlLogo";
+import Link from "next/link";
+import { Info } from "lucide-react";
 
 export default function LoginPage() {
   const { theme, setTheme } = useTheme();
@@ -33,9 +36,21 @@ export default function LoginPage() {
 
       <main className="relative z-10 w-full max-w-md py-12">
         <div className="text-center mb-8 space-y-2">
-          <h1 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center justify-center gap-3">
-            MEIKI
-          </h1>
+          <div className="flex flex-col items-center justify-center">
+            <OwlLogo className="w-24 h-24" />
+            <h1 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center gap-2">
+              MEIKI
+              <Link href="/about">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+                >
+                  <Info className="w-5 h-5" />
+                </Button>
+              </Link>
+            </h1>
+          </div>
           <p className="text-sm font-bold tracking-[0.3em] text-zinc-400 dark:text-zinc-500 uppercase">
             銘記 • Master Your Kanji
           </p>

@@ -6,16 +6,13 @@ import { Undo, Trash2, Loader2, Search, X } from "lucide-react";
 import { saveKanji } from "@/app/actions/kanji";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { SearchAnimation } from "./SearchAnimation";
+import { useSearchAnimation } from "./SearchAnimationProvider";
 
 export function HandwritingCanvas() {
   const { resolvedTheme } = useTheme();
   const strokeColor = resolvedTheme === "dark" ? "#ffffff" : "#000000";
   const guideColor = resolvedTheme === "dark" ? "#3f3f46" : "#e5e7eb"; // zinc-800 : zinc-200
-
-  const router = useRouter();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,12 +31,52 @@ export function HandwritingCanvas() {
   const [composedWord, setComposedWord] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Animation state
-  const [showAnimation, setShowAnimation] = useState(false);
-  const [currentSearchCount, setCurrentSearchCount] = useState(1);
-  const [pendingWord, setPendingWord] = useState("");
+  // Animation state (handled by provider)
+  const { triggerSearchAnimation } = useSearchAnimation();
 
-  // --- Resize canvas: only runs on mount (no dependency on traces) ---
+  const redraw = useCallback(
+    (currentTraces: Trace) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw guide lines
+      ctx.strokeStyle = guideColor;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.strokeStyle = strokeColor;
+
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      currentTraces.forEach((stroke) => {
+        const xs = stroke[0];
+        const ys = stroke[1];
+        if (xs.length === 0) return;
+
+        ctx.beginPath();
+        ctx.moveTo(xs[0], ys[0]);
+        for (let i = 1; i < xs.length; i++) {
+          ctx.lineTo(xs[i], ys[i]);
+        }
+        ctx.stroke();
+      });
+    },
+    [guideColor, strokeColor],
+  );
+
+  // --- Resize canvas ---
   useEffect(() => {
     const resizeCanvas = () => {
       const canvas = canvasRef.current;
@@ -49,19 +86,20 @@ export function HandwritingCanvas() {
         canvas.width = size;
         canvas.height = size;
         // Redraw using the current traces in state via the canvas ref
-        redrawRef.current?.(traces);
+        redraw(traces);
       }
     };
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     return () => window.removeEventListener("resize", resizeCanvas);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redraw]);
 
-  // Redraw whenever traces or theme change
+  // Redraw whenever traces change
   useEffect(() => {
     redraw(traces);
-  }, [traces, strokeColor, guideColor]);
+  }, [traces, redraw]);
 
   // Cleanup timer on unmount to avoid state updates on an unmounted component
   useEffect(() => {
@@ -184,51 +222,6 @@ export function HandwritingCanvas() {
     }
   };
 
-  const redraw = (currentTraces: Trace) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw guide lines
-    ctx.strokeStyle = guideColor;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-    ctx.strokeStyle = strokeColor; // Use explicit color instead of "currentColor"
-
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    currentTraces.forEach((stroke) => {
-      const xs = stroke[0];
-      const ys = stroke[1];
-      if (xs.length === 0) return;
-
-      ctx.beginPath();
-      ctx.moveTo(xs[0], ys[0]);
-      for (let i = 1; i < xs.length; i++) {
-        ctx.lineTo(xs[i], ys[i]);
-      }
-      ctx.stroke();
-    });
-  };
-
-  // Keep a stable ref to redraw so the resize effect can call it without stale closure
-  const redrawRef = useRef(redraw);
-  useEffect(() => {
-    redrawRef.current = () => redraw(traces);
-  });
-
   // --- Actions ---
   const handleUndo = () => {
     const newTraces = traces.slice(0, -1);
@@ -256,9 +249,10 @@ export function HandwritingCanvas() {
       const response = await saveKanji(composedWord);
       if ("success" in response && response.success) {
         const result = response as { searchCount: number };
-        setCurrentSearchCount(result.searchCount || 1);
-        setPendingWord(composedWord);
-        setShowAnimation(true);
+        triggerSearchAnimation(
+          result.searchCount || 1,
+          `/kanji/${composedWord}`,
+        );
         setComposedWord("");
         handleClearCanvas();
       }
@@ -269,11 +263,6 @@ export function HandwritingCanvas() {
     }
   };
 
-  const handleAnimationComplete = () => {
-    setShowAnimation(false);
-    router.push(`/kanji/${pendingWord}`);
-  };
-
   return (
     <div className="flex flex-col items-center w-full max-w-sm mx-auto space-y-4">
       {/* Composed Word Input Area */}
@@ -282,8 +271,8 @@ export function HandwritingCanvas() {
           <Input
             value={composedWord}
             onChange={(e) => setComposedWord(e.target.value)}
-            placeholder="Write Kanji to compose a word..."
-            className="pr-10 shadow-sm h-12"
+            placeholder="Write Kanji..."
+            className="pr-10 shadow-sm h-12 text-xl lg:text-xl"
           />
           {composedWord && (
             <button
@@ -350,7 +339,7 @@ export function HandwritingCanvas() {
       </div>
 
       {/* Candidates Area */}
-      <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 min-h-[120px] shadow-sm flex flex-col">
+      <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 min-h-30 shadow-sm flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-semibold text-zinc-500">
             Recognized Kanji
@@ -378,13 +367,6 @@ export function HandwritingCanvas() {
           )}
         </div>
       </div>
-
-      {showAnimation && (
-        <SearchAnimation
-          searchCount={currentSearchCount}
-          onComplete={handleAnimationComplete}
-        />
-      )}
     </div>
   );
 }
