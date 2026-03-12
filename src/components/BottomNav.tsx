@@ -13,8 +13,10 @@ export function BottomNav() {
   const { theme, setTheme } = useTheme();
   const { data: session } = authClient.useSession();
 
-  const hiddenRoutes = ["/", "/login", "/about"];
-  if (hiddenRoutes.includes(pathname)) return null;
+  // Hide BottomNav on login page or when on public landing/about pages while unauthenticated
+  const isPublicPage = ["/", "/about"].includes(pathname);
+  if (pathname === "/login") return null;
+  if (isPublicPage && !session) return null;
 
   const handleLogout = async () => {
     await authClient.signOut();

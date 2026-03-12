@@ -4,8 +4,9 @@ import { LoginForm } from "@/components/LoginForm";
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { OwlLogo } from "@/components/OwlLogo";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Info } from "lucide-react";
 
@@ -40,14 +41,11 @@ export default function LoginPage() {
             <OwlLogo className="w-24 h-24" />
             <h1 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center gap-2">
               KAKU!
-              <Link href="/about">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
-                >
-                  <Info className="w-5 h-5" />
-                </Button>
+              <Link 
+                href="/about"
+                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer")}
+              >
+                <Info className="w-5 h-5" />
               </Link>
             </h1>
           </div>

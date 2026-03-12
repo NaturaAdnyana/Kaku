@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ExternalLink, Github, Globe } from "lucide-react";
 import Link from "next/link";
 import { OwlLogo } from "@/components/OwlLogo";
+import { cn } from "@/lib/utils";
 
 const translations = {
   id: {
@@ -41,11 +42,12 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black p-4 py-12 sm:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
-        <Link href="/">
-          <Button variant="ghost" className="mb-4 gap-2 cursor-pointer">
-            <ArrowLeft className="w-4 h-4" />
-            {t.back}
-          </Button>
+        <Link 
+          href="/"
+          className={cn(buttonVariants({ variant: "ghost" }), "mb-4 gap-2 cursor-pointer")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t.back}
         </Link>
 
         <div className="flex flex-col items-center text-center space-y-4">
@@ -135,14 +137,10 @@ export default function AboutPage() {
             href="https://github.com/NaturaAdnyana/Kaku"
             target="_blank"
             rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline" }), "gap-2 rounded-xl cursor-pointer")}
           >
-            <Button
-              variant="outline"
-              className="gap-2 rounded-xl cursor-pointer"
-            >
-              <Github className="w-5 h-5" />
-              {t.repo}
-            </Button>
+            <Github className="w-5 h-5" />
+            {t.repo}
           </a>
         </div>
       </div>

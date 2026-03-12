@@ -1,5 +1,5 @@
 import { getKanjiByWord } from "@/app/actions/kanji";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { DeleteWordButton } from "@/components/DeleteWordButton";
@@ -12,9 +12,7 @@ type Props = {
   }>;
 };
 
-export async function generateStaticParams() {
-  return [];
-}
+export const dynamic = "force-dynamic";
 
 export default async function KanjiDetailPage({ params }: Props) {
   // Await the params for Next.js 15
@@ -53,14 +51,11 @@ export default async function KanjiDetailPage({ params }: Props) {
       <main className="flex-1 w-full max-w-md p-4 mx-auto sm:p-6 lg:max-w-lg">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-6">
-          <Link href="/list">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer"
-            >
-              <ChevronLeft size={24} />
-            </Button>
+          <Link 
+            href="/list"
+            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer")}
+          >
+            <ChevronLeft size={24} />
           </Link>
           <h1 className="text-xl font-bold text-center">Word Details</h1>
           <div className="min-w-10">
@@ -129,19 +124,18 @@ export default async function KanjiDetailPage({ params }: Props) {
                         <Link
                           key={i}
                           href={`/kanji/${encodeURIComponent(wordChar)}`}
+                          className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex items-center gap-4 hover:border-blue-500/50 transition-colors cursor-pointer group"
                         >
-                          <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex items-center gap-4 hover:border-blue-500/50 transition-colors cursor-pointer group">
-                            <div className="text-3xl font-medium w-12 text-center group-hover:scale-110 transition-transform">
-                              {wordChar}
-                            </div>
-                            <div className="flex flex-col flex-1 min-w-0">
-                              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                {entry.japanese[0].reading}
-                              </span>
-                              <p className="text-sm text-zinc-600 dark:text-zinc-400 wrap-break-word">
-                                {entry.senses[0].english_definitions.join(", ")}
-                              </p>
-                            </div>
+                          <div className="text-3xl font-medium w-12 text-center group-hover:scale-110 transition-transform">
+                            {wordChar}
+                          </div>
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              {entry.japanese[0].reading}
+                            </span>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 wrap-break-word">
+                              {entry.senses[0].english_definitions.join(", ")}
+                            </p>
                           </div>
                         </Link>
                       );
