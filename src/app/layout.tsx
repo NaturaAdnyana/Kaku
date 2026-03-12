@@ -18,14 +18,14 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Meiki (銘記)",
+  title: "Kaku! (書く)",
   description:
     "Remember Kanji better. Draw, recognise, and save Japanese words.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Meiki",
+    title: "Kaku!",
   },
   formatDetection: {
     telephone: false,

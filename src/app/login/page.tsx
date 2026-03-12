@@ -39,7 +39,7 @@ export default function LoginPage() {
           <div className="flex flex-col items-center justify-center">
             <OwlLogo className="w-24 h-24" />
             <h1 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center gap-2">
-              MEIKI
+              KAKU!
               <Link href="/about">
                 <Button
                   variant="ghost"
@@ -52,7 +52,7 @@ export default function LoginPage() {
             </h1>
           </div>
           <p className="text-sm font-bold tracking-[0.3em] text-zinc-400 dark:text-zinc-500 uppercase">
-            銘記 • Master Your Kanji
+            書く • Master Your Kanji
           </p>
         </div>
         <LoginForm />

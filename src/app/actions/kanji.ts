@@ -69,6 +69,7 @@ export async function getKanjiList(
   page: number = 1,
   limit: number = 20,
   search?: string,
+  sortBy: "newest" | "most-searched" = "newest",
 ) {
   try {
     const session = await auth.api.getSession({
@@ -90,11 +91,20 @@ export async function getKanjiList(
       ) as any;
     }
 
+    const orderBy =
+      sortBy === "most-searched"
+        ? [
+            desc(sql`CAST(${kanjiList.searchCount} AS INTEGER)`),
+            desc(kanjiList.updatedAt),
+            desc(kanjiList.id),
+          ]
+        : [desc(kanjiList.updatedAt), desc(kanjiList.id)];
+
     const data = await db
       .select()
       .from(kanjiList)
       .where(whereClause)
-      .orderBy(desc(kanjiList.updatedAt))
+      .orderBy(...orderBy)
       .limit(limit)
       .offset(offset);
 
@@ -126,7 +136,7 @@ export async function getKanjiByWord(character: string) {
     });
 
     if (!session || !session.user) {
-      return { error: "Unauthorized" };
+      return { success: true, kanji: null };
     }
 
     const userId = session.user.id;
@@ -143,7 +153,7 @@ export async function getKanjiByWord(character: string) {
       return { success: true, kanji: existing[0] };
     }
 
-    return { success: false, error: "Not found" };
+    return { success: true, kanji: null };
   } catch (error) {
     console.error("Error fetching kanji by word:", error);
     return { error: "Failed to fetch kanji" };

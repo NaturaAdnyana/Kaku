@@ -26,11 +26,7 @@ export function OwlLogo({ className }: OwlLogoProps) {
   }, []);
 
   if (!animationData) {
-    return (
-      <div
-        className={`${className} rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse`}
-      />
-    );
+    return <div className={className} />;
   }
 
   return (

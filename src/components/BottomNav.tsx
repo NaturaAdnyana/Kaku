@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, PenLine, ListCollapse, Moon, Sun } from "lucide-react";
+import { LogOut, PenLine, ListCollapse, Moon, Sun, LogIn } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -11,8 +11,10 @@ export function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { data: session } = authClient.useSession();
 
-  if (pathname === "/login") return null;
+  const hiddenRoutes = ["/", "/login", "/about"];
+  if (hiddenRoutes.includes(pathname)) return null;
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -57,16 +59,31 @@ export function BottomNav() {
         <span className="text-[10px] font-semibold tracking-wide">Theme</span>
       </button>
 
-      <button
-        onClick={handleLogout}
-        className={cn(
-          navItemClasses(),
-          "text-red-400/80 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/10",
-        )}
-      >
-        <LogOut size={24} />
-        <span className="text-[10px] font-semibold tracking-wide">Logout</span>
-      </button>
+      {session ? (
+        <button
+          onClick={handleLogout}
+          className={cn(
+            navItemClasses(),
+            "text-red-400/80 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/10",
+          )}
+        >
+          <LogOut size={24} />
+          <span className="text-[10px] font-semibold tracking-wide">
+            Logout
+          </span>
+        </button>
+      ) : (
+        <Link
+          href="/login"
+          className={cn(
+            navItemClasses(),
+            "text-blue-400/80 hover:text-blue-500 hover:bg-blue-500/10 dark:hover:bg-blue-500/10",
+          )}
+        >
+          <LogIn size={24} />
+          <span className="text-[10px] font-semibold tracking-wide">Login</span>
+        </Link>
+      )}
     </nav>
   );
 }

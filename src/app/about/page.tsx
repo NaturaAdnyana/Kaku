@@ -9,25 +9,25 @@ import { OwlLogo } from "@/components/OwlLogo";
 
 const translations = {
   id: {
-    title: "Tentang Meiki",
+    title: "Tentang Kaku!",
     description:
-      "Meiki adalah aplikasi pendukung belajar Kanji yang berfokus pada teknik repetisi tulis (handwriting repetition). Terinspirasi dari pengalaman pribadi menghadapi aksara non-familiar di Jepang, Meiki hadir sebagai solusi praktis untuk menerjemahkan sekaligus menghafal pola visual Kanji dan memperkaya diksi secara efektif.",
+      "Kaku! adalah aplikasi pendukung belajar Kanji yang berfokus pada teknik repetisi tulis (handwriting repetition). Terinspirasi dari pengalaman pribadi menghadapi aksara non-familiar di Jepang, Kaku! hadir sebagai solusi praktis untuk menerjemahkan sekaligus menghafal pola visual Kanji dan memperkaya diksi secara efektif.",
     libraries: "Library & API yang digunakan:",
     back: "Kembali",
     repo: "Repositori Projek",
   },
   en: {
-    title: "About Meiki",
+    title: "About Kaku!",
     description:
-      "Meiki is a Kanji learning support tool focused on handwriting repetition. Inspired by the challenge of navigating unfamiliar characters in Japan, Meiki provides a practical solution to instantly translate while effectively memorizing Kanji patterns and expanding vocabulary.",
+      "Kaku! is a Kanji learning support tool focused on handwriting repetition. Inspired by the challenge of navigating unfamiliar characters in Japan, Kaku! provides a practical solution to instantly translate while effectively memorizing Kanji patterns and expanding vocabulary.",
     libraries: "Libraries & APIs used:",
     back: "Back",
     repo: "Project Repository",
   },
   ja: {
-    title: "Meikiについて",
+    title: "Kaku!について",
     description:
-      "Meikiは、繰り返し書くことで漢字の定着を図る学習支援ツールです。日本での生活や仕事の中で直面する「読めない漢字」の課題を解決するため、即時の翻訳と書き取りパターンの習得を同時に行えるよう設計されています。語彙力の向上を効率的にサポートします。",
+      "Kaku!は、繰り返し書くことで漢字の定着を図る学習支援ツールです。日本での生活や仕事の中で直面する「読めない漢字」の課題を解決するため、即時の翻訳と書き取りパターンの習得を同時に行えるよう設計されています。語彙力の向上を効率的にサポートします。",
     libraries: "使用されているライブラリとAPI:",
     back: "戻る",
     repo: "プロジェクトリポジトリ",

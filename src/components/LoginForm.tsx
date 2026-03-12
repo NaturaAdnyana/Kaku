@@ -85,7 +85,7 @@ export function LoginForm() {
             <CardDescription className="text-center text-zinc-500 dark:text-zinc-400">
               {isLogin
                 ? "Enter your credentials to continue your journey"
-                : "Join Meiki and start mastering Kanji today"}
+                : "Join Kaku! and start mastering Kanji today"}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -210,7 +210,7 @@ export function LoginForm() {
                 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors text-center py-2"
                 onClick={() => setIsLogin(!isLogin)}
               >
-                {isLogin ? "Don't have an account? " : "Already using Meiki? "}
+                {isLogin ? "Don't have an account? " : "Already using Kaku! "}
                 <span className="text-zinc-900 dark:text-white font-bold underline underline-offset-4 decoration-zinc-300 dark:decoration-zinc-700">
                   {isLogin ? "Sign up now" : "Go to login"}
                 </span>

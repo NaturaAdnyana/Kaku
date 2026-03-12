@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
 import { useSearchAnimation } from "./SearchAnimationProvider";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 export function HandwritingCanvas() {
+  const queryClient = useQueryClient();
   const { resolvedTheme } = useTheme();
   const strokeColor = resolvedTheme === "dark" ? "#ffffff" : "#000000";
   const guideColor = resolvedTheme === "dark" ? "#3f3f46" : "#e5e7eb"; // zinc-800 : zinc-200
@@ -248,6 +251,7 @@ export function HandwritingCanvas() {
     try {
       const response = await saveKanji(composedWord);
       if ("success" in response && response.success) {
+        queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
         const result = response as { searchCount: number };
         triggerSearchAnimation(
           result.searchCount || 1,

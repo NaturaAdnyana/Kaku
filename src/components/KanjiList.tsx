@@ -24,12 +24,19 @@ import {
 import { cn, getSearchCountColor } from "@/lib/utils";
 import { useInView } from "react-intersection-observer";
 import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { ArrowDownAZ, Calendar } from "lucide-react";
 
-// Skeleton component for loading state
-function KanjiSkeleton() {
+// Skeleton component for list items only
+export function KanjiListSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-3">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <div
           key={i}
           className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl animate-pulse"
@@ -48,6 +55,21 @@ function KanjiSkeleton() {
   );
 }
 
+export function KanjiSkeleton() {
+  return (
+    <div className="flex flex-col w-full gap-4">
+      {/* Search Bar Skeleton */}
+      <div className="pt-2 pb-4 px-2 mb-2 flex flex-col gap-4">
+        <div className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/20 dark:border-zinc-800 rounded-2xl animate-pulse" />
+        <div className="flex justify-between items-center px-1">
+          <div className="w-32 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+        </div>
+      </div>
+      <KanjiListSkeleton />
+    </div>
+  );
+}
+
 export function KanjiList() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,6 +78,7 @@ export function KanjiList() {
     null,
   );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<"newest" | "most-searched">("newest");
 
   const { ref, inView } = useInView();
 
@@ -67,9 +90,14 @@ export function KanjiList() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ["kanji-list", debouncedSearch],
+    queryKey: ["kanji-list", debouncedSearch, sortBy],
     queryFn: async ({ pageParam = 1 }) => {
-      const res = await getKanjiList(pageParam as number, 20, debouncedSearch);
+      const res = await getKanjiList(
+        pageParam as number,
+        20,
+        debouncedSearch,
+        sortBy,
+      );
       if ("error" in res) throw new Error(res.error);
       return res;
     },
@@ -77,6 +105,8 @@ export function KanjiList() {
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.hasMore ? allPages.length + 1 : undefined;
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const deleteMutation = useMutation({
@@ -119,9 +149,9 @@ export function KanjiList() {
 
   return (
     <div className="flex flex-col w-full pb-20">
-      {/* Search Header */}
+      {/* Search Header - Always Persistent */}
       <div className="sticky top-0 z-10 dark:bg-zinc-950/80 backdrop-blur-md pt-2 pb-4 px-2 mb-2 flex flex-col gap-4">
-        <div className="relative group ">
+        <div className="relative group">
           <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors"
             size={18}
@@ -149,11 +179,53 @@ export function KanjiList() {
               : "Saved Words"}
             : {total}
           </span>
+
+          <Select
+            value={sortBy}
+            onValueChange={(val) => {
+              if (val === "newest" || val === "most-searched") {
+                setSortBy(val);
+              }
+            }}
+          >
+            <SelectTrigger className="bg-zinc-100 dark:bg-zinc-900 border-none shadow-none text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 gap-2 h-9 px-3 rounded-xl transition-colors">
+              <div className="flex items-center gap-1.5 pointer-events-none">
+                {sortBy === "newest" ? (
+                  <Calendar size={14} className="shrink-0 text-blue-500" />
+                ) : (
+                  <ArrowDownAZ size={14} className="shrink-0 text-orange-500" />
+                )}
+                <span className="truncate">
+                  {sortBy === "newest" ? "Newest First" : "Most Searched"}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent align="end" className="min-w-44 p-1.5 rounded-2xl">
+              <SelectItem
+                value="newest"
+                className="rounded-xl focus:bg-zinc-100 dark:focus:bg-zinc-800"
+              >
+                <div className="flex items-center gap-2 py-0.5">
+                  <Calendar size={14} className="text-blue-500" />
+                  <span>Newest First</span>
+                </div>
+              </SelectItem>
+              <SelectItem
+                value="most-searched"
+                className="rounded-xl focus:bg-zinc-100 dark:focus:bg-zinc-800"
+              >
+                <div className="flex items-center gap-2 py-0.5">
+                  <ArrowDownAZ size={14} className="text-orange-500" />
+                  <span>Most Searched</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {isLoading ? (
-        <KanjiSkeleton />
+        <KanjiListSkeleton />
       ) : isError ? (
         <div className="flex flex-col items-center justify-center py-20 text-center text-red-500">
           <p>Failed to load Kanji.</p>
@@ -184,20 +256,25 @@ export function KanjiList() {
           {kanjiItems.map((item, index) => {
             const isLast = index === kanjiItems.length - 1;
             return (
-              <Link
+              <div
                 key={item.id}
-                href={`/kanji/${encodeURIComponent(item.character)}`}
                 ref={isLast ? ref : null}
-                className="relative flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200"
+                className="group relative flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all duration-200"
               >
-                <div className="flex items-center gap-4">
+                <Link
+                  href={`/kanji/${encodeURIComponent(item.character)}`}
+                  className="absolute inset-0 z-0 rounded-2xl"
+                  aria-label={`View details for ${item.character}`}
+                />
+
+                <div className="flex items-center gap-4 relative z-10 pointer-events-none">
                   <span className="text-3xl font-semibold font-jp">
                     {item.character}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 relative z-10">
+                  <div className="flex items-center gap-4 pointer-events-none">
                     <span className="text-[10px] text-zinc-400">
                       {new Date(item.updatedAt).toLocaleDateString()}
                     </span>
@@ -216,13 +293,13 @@ export function KanjiList() {
 
                   <button
                     onClick={(e) => handleDeleteClick(e, item.character)}
-                    className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:text-red-600 active:bg-red-100 dark:active:bg-red-500/20 rounded-full transition-all duration-200 shrink-0 cursor-pointer"
+                    className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:text-red-600 active:bg-red-100 dark:active:bg-red-500/20 rounded-full transition-all duration-200 shrink-0 cursor-pointer pointer-events-auto"
                     title="Delete Word"
                   >
                     <Trash2 size={20} />
                   </button>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
