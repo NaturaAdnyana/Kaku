@@ -132,7 +132,7 @@ export default function AboutPage() {
 
         <div className="flex justify-center mb-24">
           <a
-            href="https://github.com/NaturaAdnyana/meiki"
+            href="https://github.com/NaturaAdnyana/Kaku"
             target="_blank"
             rel="noopener noreferrer"
           >
