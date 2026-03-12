@@ -74,6 +74,7 @@ export const auth = betterAuth({
     "http://localhost:3000",
     "http://192.168.1.18:3000",
     "https://meiki-natura.vercel.app",
+    "https://kaku-nulis.vercel.app",
   ],
   emailAndPassword: {
     enabled: true,
