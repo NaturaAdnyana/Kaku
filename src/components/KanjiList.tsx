@@ -281,7 +281,7 @@ export function KanjiList() {
                     <div
                       className={cn(
                         "text-xs font-bold px-2 py-1 rounded-full flex items-center shadow-sm",
-                        getSearchCountColor(parseInt(item.searchCount || "0")),
+                        getSearchCountColor(item.searchCount),
                       )}
                       title="Times Searched"
                     >

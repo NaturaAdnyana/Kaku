@@ -76,13 +76,11 @@ export default async function KanjiDetailPage({ params }: Props) {
             )}
 
             {/* Local Stats Badge */}
-            {dbData?.kanji && parseInt(dbData.kanji.searchCount || "0") > 1 && (
+            {dbData?.kanji && dbData.kanji.searchCount > 1 && (
               <div
                 className={cn(
                   "absolute top-4 right-4 text-xs px-3 py-1 rounded-full flex justify-center gap-1 items-center",
-                  getSearchCountColor(
-                    parseInt(dbData.kanji.searchCount || "0"),
-                  ),
+                  getSearchCountColor(dbData.kanji.searchCount),
                 )}
               >
                 <span className="text-[10px] opacity-70 uppercase tracking-widest">

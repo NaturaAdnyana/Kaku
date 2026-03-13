@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { kanjiList } from "@/lib/schema";
+import { kanji, userKanji } from "@/lib/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -18,25 +18,40 @@ export async function saveKanji(character: string) {
 
     const userId = session.user.id;
 
-    // Check if the user already has this kanji saved
+    // 1. Ensure the character exists in the global kanji table
+    let kanjiRecord = await db
+      .select()
+      .from(kanji)
+      .where(eq(kanji.character, character))
+      .limit(1);
+
+    if (kanjiRecord.length === 0) {
+      const inserted = await db
+        .insert(kanji)
+        .values({ character })
+        .returning();
+      kanjiRecord = inserted;
+    }
+
+    const kanjiId = kanjiRecord[0].id;
+
+    // 2. Check if the user already has this kanji saved
     const existing = await db
       .select()
-      .from(kanjiList)
-      .where(
-        and(eq(kanjiList.userId, userId), eq(kanjiList.character, character)),
-      )
+      .from(userKanji)
+      .where(and(eq(userKanji.userId, userId), eq(userKanji.kanjiId, kanjiId)))
       .limit(1);
 
     if (existing.length > 0) {
       // Increment searchCount
-      const currentCount = parseInt(existing[0].searchCount || "0", 10);
+      const currentCount = existing[0].searchCount;
       await db
-        .update(kanjiList)
+        .update(userKanji)
         .set({
-          searchCount: (currentCount + 1).toString(),
+          searchCount: currentCount + 1,
           updatedAt: new Date(),
         })
-        .where(eq(kanjiList.id, existing[0].id));
+        .where(eq(userKanji.id, existing[0].id));
 
       return {
         success: true,
@@ -46,11 +61,11 @@ export async function saveKanji(character: string) {
       };
     }
 
-    // Save new kanji
-    await db.insert(kanjiList).values({
+    // 3. Save new user-kanji mapping
+    await db.insert(userKanji).values({
       userId,
-      character,
-      searchCount: "1",
+      kanjiId,
+      searchCount: 1,
     });
 
     return {
@@ -83,35 +98,45 @@ export async function getKanjiList(
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
-    let whereClause = eq(kanjiList.userId, userId);
+    let whereClause = eq(userKanji.userId, userId);
     if (search) {
       whereClause = and(
         whereClause,
-        sql`${kanjiList.character} LIKE ${`%${search}%`}`,
+        sql`${kanji.character} LIKE ${`%${search}%`}`,
       ) as any;
     }
 
     const orderBy =
       sortBy === "most-searched"
         ? [
-            desc(sql`CAST(${kanjiList.searchCount} AS INTEGER)`),
-            desc(kanjiList.updatedAt),
-            desc(kanjiList.id),
+            desc(userKanji.searchCount),
+            desc(userKanji.updatedAt),
+            desc(userKanji.id),
           ]
-        : [desc(kanjiList.updatedAt), desc(kanjiList.id)];
+        : [desc(userKanji.updatedAt), desc(userKanji.id)];
 
     const data = await db
-      .select()
-      .from(kanjiList)
+      .select({
+        id: userKanji.id,
+        userId: userKanji.userId,
+        kanjiId: userKanji.kanjiId,
+        character: kanji.character,
+        searchCount: userKanji.searchCount,
+        createdAt: userKanji.createdAt,
+        updatedAt: userKanji.updatedAt,
+      })
+      .from(userKanji)
+      .innerJoin(kanji, eq(userKanji.kanjiId, kanji.id))
       .where(whereClause)
       .orderBy(...orderBy)
       .limit(limit)
       .offset(offset);
 
-    // Also get total count to know if there are more
+    // Also get total count
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
-      .from(kanjiList)
+      .from(userKanji)
+      .innerJoin(kanji, eq(userKanji.kanjiId, kanji.id))
       .where(whereClause);
 
     const totalCount = Number(countResult[0]?.count || 0);
@@ -142,11 +167,18 @@ export async function getKanjiByWord(character: string) {
     const userId = session.user.id;
 
     const existing = await db
-      .select()
-      .from(kanjiList)
-      .where(
-        and(eq(kanjiList.userId, userId), eq(kanjiList.character, character)),
-      )
+      .select({
+        id: userKanji.id,
+        userId: userKanji.userId,
+        kanjiId: userKanji.kanjiId,
+        character: kanji.character,
+        searchCount: userKanji.searchCount,
+        createdAt: userKanji.createdAt,
+        updatedAt: userKanji.updatedAt,
+      })
+      .from(userKanji)
+      .innerJoin(kanji, eq(userKanji.kanjiId, kanji.id))
+      .where(and(eq(userKanji.userId, userId), eq(kanji.character, character)))
       .limit(1);
 
     if (existing.length > 0) {
@@ -172,11 +204,21 @@ export async function deleteKanji(character: string) {
 
     const userId = session.user.id;
 
-    await db
-      .delete(kanjiList)
-      .where(
-        and(eq(kanjiList.userId, userId), eq(kanjiList.character, character)),
-      );
+    // We need to find the userKanji record first to delete it
+    const subquery = db
+      .select({ id: userKanji.id })
+      .from(userKanji)
+      .innerJoin(kanji, eq(userKanji.kanjiId, kanji.id))
+      .where(and(eq(userKanji.userId, userId), eq(kanji.character, character)))
+      .limit(1);
+
+    const recordToDelete = await subquery;
+
+    if (recordToDelete.length > 0) {
+      await db
+        .delete(userKanji)
+        .where(eq(userKanji.id, recordToDelete[0].id));
+    }
 
     return { success: true };
   } catch (error) {
