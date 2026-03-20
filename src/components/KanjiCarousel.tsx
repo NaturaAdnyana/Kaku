@@ -11,14 +11,18 @@ import {
 } from "@/components/ui/carousel";
 import { cn, getSearchCountColor, isKanji } from "@/lib/utils";
 import Link from "next/link";
-import { RotateCw } from "lucide-react";
+import { RotateCw, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getKanjiByWord } from "@/app/actions/kanji";
 import { useSvgAnimations } from "@/hooks/useSvgAnimations";
 
 interface KanjiCarouselProps {
   decodedWord: string;
-  apiEntry: any;
+  apiEntry: {
+    japanese?: Array<{
+      reading?: string;
+    }>;
+  } | null;
 }
 
 function KanjiSVG({ svgContent }: { svgContent: string }) {
@@ -50,6 +54,7 @@ function KanjiSVG({ svgContent }: { svgContent: string }) {
 function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
   const { api } = useCarousel();
   const [current, setCurrent] = useState(0);
+  const wordChars = useMemo(() => Array.from(decodedWord), [decodedWord]);
 
   // Track active slide — properly cleaned up on unmount / api change
   React.useEffect(() => {
@@ -66,20 +71,21 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
 
   const { data: dbData } = useQuery({
     queryKey: ["kanji-dbData", decodedWord],
-    queryFn: async () => await getKanjiByWord(decodedWord),
+    queryFn: () => getKanjiByWord(decodedWord),
+    enabled: decodedWord.length > 0,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Shared hook — no more inline fetch logic
   const { animations } = useSvgAnimations(decodedWord);
 
-  // Stable total so it doesn't recompute on every render
-  const totalSlides = useMemo(() => animations.length + 1, [animations]);
+  const totalSlides = animations.length + 1;
 
   // Stable scroll handler
   const scrollTo = useCallback((index: number) => api?.scrollTo(index), [api]);
 
   // Scale font + tile padding down gracefully for longer words
-  const charCount = decodedWord.length;
+  const charCount = wordChars.length;
   const fontSize =
     charCount <= 1
       ? "text-7xl"
@@ -117,8 +123,8 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
                 fontSize,
               )}
             >
-              {decodedWord.length > 1 ? (
-                decodedWord.split("").map((char, i) => {
+              {wordChars.length > 1 ? (
+                wordChars.map((char, i) => {
                   if (isKanji(char)) {
                     return (
                       <Link
@@ -156,27 +162,33 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
               </span>
             )}
 
+            {/* Koijo Chat Button */}
+            <Link
+              href={`/kanji/${encodeURIComponent(decodedWord)}/chat`}
+              className="absolute bottom-4 left-4 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full shadow-sm border border-blue-200/50 dark:border-blue-800/50 transition-transform active:scale-95 z-10 flex items-center gap-1.5"
+              title="Chat with Koijo about this word"
+            >
+              <MessageCircle size={13} strokeWidth={2.5} />
+              <span className="text-xs font-bold">Koijo</span>
+            </Link>
+
             {/* Local Stats Badge */}
             {dbData?.kanji && dbData.kanji.searchCount > 1 && (
               <div
                 className={cn(
-                  "absolute bottom-4 right-4 text-xs px-3 py-1 rounded-full flex justify-center gap-1 items-center",
+                  "absolute bottom-4 right-4 px-3 py-1.5 rounded-full shadow-sm border flex items-center gap-1.5 transition-transform active:scale-95",
                   getSearchCountColor(dbData.kanji.searchCount),
                 )}
               >
-                <span className="text-[10px] opacity-70 uppercase tracking-widest">
-                  Searched
-                </span>
-                <span className="text-sm font-bold">
-                  {dbData.kanji.searchCount}x
-                </span>
+                <span className="text-[10px] opacity-70 uppercase tracking-widest">Searched</span>
+                <span className="text-xs font-bold">{dbData.kanji.searchCount}x</span>
               </div>
             )}
           </div>
         </CarouselItem>
-        {animations.map(({ char, svgContent }) => (
+        {animations.map(({ char, svgContent }, index) => (
           <CarouselItem
-            key={char}
+            key={`${char}-${index}`}
             className="flex flex-col items-center justify-center h-50"
           >
             <div className="flex flex-col items-center justify-center h-full w-full p-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm text-center relative overflow-hidden box-border group transition-all duration-300 hover:border-zinc-300 dark:hover:border-zinc-700">

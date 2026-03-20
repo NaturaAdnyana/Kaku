@@ -6,21 +6,29 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const { data: session } = authClient.useSession();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Hide BottomNav on login page or when on public landing/about pages while unauthenticated
   const isPublicPage = ["/", "/about"].includes(pathname);
   if (pathname === "/login") return null;
   if (isPublicPage && !session) return null;
+  if (pathname.endsWith("/chat")) return null;
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    router.push("/login");
+    setIsSigningOut(true);
+    try {
+      await authClient.signOut();
+      router.push("/login");
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   const navItemClasses = (isActive: boolean = false) =>
@@ -45,8 +53,9 @@ export function BottomNav() {
       </Link>
 
       <button
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         className={navItemClasses()}
+        aria-label="Toggle theme"
       >
         <div className="relative w-6 h-6 flex items-center justify-center">
           <Moon
@@ -64,24 +73,27 @@ export function BottomNav() {
       {session ? (
         <button
           onClick={handleLogout}
+          disabled={isSigningOut}
           className={cn(
             navItemClasses(),
-            "text-red-400/80 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/10",
+            "text-red-400/80 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/10 disabled:opacity-60 disabled:cursor-not-allowed",
           )}
+          aria-label="Logout"
         >
           <LogOut size={24} />
           <span className="text-[10px] font-semibold tracking-wide">
-            Logout
+            {isSigningOut ? "..." : "Logout"}
           </span>
         </button>
       ) : (
         <Link
           href="/login"
           className={cn(
-            navItemClasses(),
-            "text-blue-400/80 hover:text-blue-500 hover:bg-blue-500/10 dark:hover:bg-blue-500/10",
-          )}
-        >
+              navItemClasses(),
+              "text-blue-400/80 hover:text-blue-500 hover:bg-blue-500/10 dark:hover:bg-blue-500/10",
+            )}
+            aria-label="Login"
+          >
           <LogIn size={24} />
           <span className="text-[10px] font-semibold tracking-wide">Login</span>
         </Link>

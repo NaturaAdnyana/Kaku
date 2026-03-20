@@ -1,5 +1,3 @@
-"use client";
-
 import { KanjiList } from "@/components/KanjiList";
 
 export default function ListPage() {

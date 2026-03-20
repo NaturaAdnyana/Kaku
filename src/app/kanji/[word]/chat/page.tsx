@@ -1,0 +1,243 @@
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, UIMessage, TextUIPart } from "ai";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { ChevronLeft, Send, AlertTriangle, Bot, User } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, use, useState } from "react";
+import { cn } from "@/lib/utils";
+import Lottie from "lottie-react";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+
+type LottiePayload = Record<string, unknown> | null;
+
+function getMessageText(parts: UIMessage["parts"]): string {
+  return (parts ?? [])
+    .filter((p): p is TextUIPart => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+}
+
+type Props = {
+  params: Promise<{
+    word: string;
+  }>;
+};
+
+export default function ChatPage({ params }: Props) {
+  const { word } = use(params);
+  const decodedWord = decodeURIComponent(word);
+
+  const [input, setInput] = useState("");
+  const [lottieData, setLottieData] = useState<LottiePayload>(null);
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasStartedRef = useRef(false);
+
+  // Pick random lottie animation
+  useEffect(() => {
+    const controller = new AbortController();
+    const randomLevel = Math.floor(Math.random() * 4) + 1;
+    fetch(`/animations/level${randomLevel}.json`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => setLottieData(data))
+      .catch((err) => {
+        if ((err as Error).name !== "AbortError") {
+          console.error("Failed to load Lottie animation", err);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  // Auto-start chat
+  useEffect(() => {
+    if (!hasStartedRef.current && messages.length === 0) {
+      hasStartedRef.current = true;
+      sendMessage({
+        text: `I'm learning the kanji "${decodedWord}". Please provide some example sentences using this kanji, and for each sentence, include its meaning and reading.`,
+      });
+    }
+  }, [decodedWord, messages.length, sendMessage]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: status === "streaming" ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [messages, status]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || isLoading) return;
+    sendMessage({ text });
+    setInput("");
+  };
+
+  return (
+    <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative">
+      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl shadow-sm bg-white dark:bg-zinc-950/50 jp-bg">
+        {/* Header Navigation */}
+        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
+          <Link
+            href={`/kanji/${encodeURIComponent(decodedWord)}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer",
+            )}
+            aria-label="Back to word details"
+          >
+            <ChevronLeft size={24} />
+          </Link>
+          <div className="flex flex-col items-center">
+            <h1 className="text-lg font-bold">
+              Koijo - The Genius Anomaly Bird
+            </h1>
+            <span className="text-xs text-zinc-500 font-medium">
+              Topic: {decodedWord}
+            </span>
+          </div>
+          <div className="min-w-10"></div>
+        </div>
+
+        {/* Warning Banner */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-500 p-3 mx-4 mt-4 rounded-xl flex gap-3 text-sm border border-amber-200/50 dark:border-amber-800/50 items-start shadow-sm shrink-0">
+          <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+          <p className="leading-snug">
+            <strong>Warning:</strong> Please do not send any important,
+            sensitive, or personal data to Koijo.
+          </p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {messages.map((m: UIMessage) => (
+            <div
+              key={m.id}
+              className={cn(
+                "flex gap-3 max-w-[85%]",
+                m.role === "user" ? "ml-auto flex-row-reverse" : "",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden",
+                  m.role === "user"
+                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+                    : "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50",
+                )}
+              >
+                {m.role === "user" ? (
+                  <User size={16} />
+                ) : lottieData ? (
+                  <Lottie
+                    animationData={lottieData}
+                    loop={true}
+                    className="w-14 h-14 pointer-events-none"
+                  />
+                ) : (
+                  <Bot size={22} />
+                )}
+              </div>
+
+              <div
+                className={cn(
+                  "px-4 py-3 rounded-2xl text-[15px] leading-relaxed",
+                  m.role === "user"
+                    ? "bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 rounded-tr-sm"
+                    : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-tl-sm text-zinc-800 dark:text-zinc-100 wrap-break-word whitespace-pre-wrap",
+                )}
+              >
+                {m.role === "user" ? (
+                  getMessageText(m.parts)
+                ) : (
+                  <MarkdownRenderer message={m} />
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isLoading &&
+            messages.length > 0 &&
+            messages[messages.length - 1].role === "user" && (
+              <div className="flex gap-3 max-w-[85%]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 overflow-hidden">
+                  {lottieData ? (
+                    <Lottie
+                      animationData={lottieData}
+                      loop={true}
+                      className="w-14 h-14 pointer-events-none"
+                    />
+                  ) : (
+                    <Bot size={22} />
+                  )}
+                </div>
+                <div className="px-5 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-tl-sm flex items-center gap-1.5 h-12.5">
+                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce"></div>
+                </div>
+              </div>
+            )}
+
+          <div ref={messagesEndRef} className="h-4" />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 sticky bottom-0 z-20">
+          <form
+            onSubmit={handleSubmit}
+            className="relative flex items-end gap-2"
+          >
+            <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 focus-within:ring-2 focus-within:ring-zinc-300 dark:focus-within:ring-zinc-700 transition-shadow">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask something about this kanji..."
+                disabled={isLoading}
+                autoComplete="off"
+                maxLength={600}
+                className="w-full bg-transparent px-4 py-3.5 pr-12 text-sm outline-none disabled:opacity-50"
+                aria-label="Message input"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="p-3.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-200 dark:hover:bg-white text-white dark:text-zinc-900 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              title="Send message"
+              aria-label="Send message"
+            >
+              <Send
+                size={18}
+                className={cn(
+                  input.trim() && !isLoading
+                    ? "-translate-x-0.5 translate-y-0.5 transition-transform"
+                    : "",
+                  "active:translate-x-0.5 active:-translate-y-0.5",
+                )}
+              />
+            </button>
+          </form>
+          {status === "error" && (
+            <p className="mt-2 text-xs text-red-500 text-center">
+              Message failed to send. Please try again.
+            </p>
+          )}
+          <div className="text-center mt-3">
+            <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
+              Koijo can make mistakes. Verify important information.
+            </span>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

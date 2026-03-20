@@ -42,9 +42,12 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black p-4 py-12 sm:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
-        <Link 
+        <Link
           href="/"
-          className={cn(buttonVariants({ variant: "ghost" }), "mb-4 gap-2 cursor-pointer")}
+          className={cn(
+            buttonVariants({ variant: "ghost" }),
+            "mb-4 gap-2 cursor-pointer",
+          )}
         >
           <ArrowLeft className="w-4 h-4" />
           {t.back}
@@ -128,6 +131,18 @@ export default function AboutPage() {
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
+              <li>
+                <a
+                  href="https://openrouter.ai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <Globe className="w-4 h-4" />
+                  AI Chat - OpenRouter AI
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
             </ul>
           </CardContent>
         </Card>
@@ -137,7 +152,10 @@ export default function AboutPage() {
             href="https://github.com/NaturaAdnyana/Kaku"
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: "outline" }), "gap-2 rounded-xl cursor-pointer")}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "gap-2 rounded-xl cursor-pointer",
+            )}
           >
             <Github className="w-5 h-5" />
             {t.repo}
