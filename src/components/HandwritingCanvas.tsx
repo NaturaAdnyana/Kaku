@@ -2,10 +2,9 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Undo, Trash2, Loader2, Search, X } from "lucide-react";
+import { Undo, Trash2, Loader2, Search, X, PenLine } from "lucide-react";
 import { saveKanji } from "@/app/actions/kanji";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
-import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
 import { useSearchAnimation } from "./SearchAnimationProvider";
 
@@ -270,32 +269,37 @@ export function HandwritingCanvas() {
   return (
     <div className="flex flex-col items-center w-full max-w-sm mx-auto space-y-4">
       {/* Composed Word Input Area */}
-      <div className="flex w-full space-x-2">
-        <div className="relative flex-1">
-          <Input
+      <div className="flex w-full gap-3">
+        <div className="relative flex-1 group">
+          <PenLine
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors"
+            size={18}
+          />
+          <input
+            type="text"
             value={composedWord}
             onChange={(e) => setComposedWord(e.target.value)}
             placeholder="Write Kanji..."
-            className="pr-10 shadow-sm h-12 text-xl lg:text-xl"
+            className="w-full pl-11 pr-11 h-13 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-lg focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-800 transition-all outline-none border border-zinc-200/20 dark:border-zinc-800 shadow-sm"
           />
           {composedWord && (
             <button
               onClick={() => setComposedWord("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 bg-zinc-100 dark:bg-zinc-800 rounded-full p-1 leading-none cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           )}
         </div>
         <Button
           onClick={handleSearchAndSave}
           disabled={!composedWord.trim() || isSaving}
-          className="px-6 shadow-md transition-all active:scale-95 h-12 cursor-pointer"
+          className="px-6 rounded-2xl shadow-md transition-all active:scale-95 h-13 cursor-pointer bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 border-none"
         >
           {isSaving ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <Search className="w-5 h-5" />
+            <Search className="w-5 h-5" strokeWidth={2.5} />
           )}
         </Button>
       </div>

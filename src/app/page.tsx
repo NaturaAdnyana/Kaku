@@ -36,9 +36,12 @@ export default function Home() {
             </div>
             <CardTitle className="text-3xl font-bold flex items-center justify-center gap-2">
               Kaku! (書く)
-              <Link 
+              <Link
                 href="/about"
-                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer")}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer",
+                )}
               >
                 <Info className="w-5 h-5" />
               </Link>
@@ -46,9 +49,12 @@ export default function Home() {
             <CardDescription>Remember Kanji better.</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center pb-8">
-            <Link 
-              href="/login" 
-              className={cn(buttonVariants(), "w-full h-12 text-lg rounded-xl cursor-pointer")}
+            <Link
+              href="/login"
+              className={cn(
+                buttonVariants(),
+                "w-full h-12 text-lg rounded-xl cursor-pointer",
+              )}
             >
               Login / Sign Up
             </Link>
@@ -67,9 +73,12 @@ export default function Home() {
           <div className="space-y-2">
             <h1 className="text-4xl font-extrabold tracking-tight flex items-center justify-center gap-2">
               Ready to practice?
-              <Link 
+              <Link
                 href="/about"
-                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200")}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200",
+                )}
               >
                 <Info className="w-5 h-5" />
               </Link>
@@ -81,9 +90,12 @@ export default function Home() {
           </div>
         </div>
 
-        <Link 
+        <Link
           href="/write"
-          className={cn(buttonVariants({ size: "lg" }), "w-full px-5 h-12 text-lg rounded-2xl shadow-lg hover:scale-105 transition-transform cursor-pointer")}
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "px-5 h-12 text-lg rounded-xl shadow-lg hover:scale-105 transition-transform cursor-pointer",
+          )}
         >
           Start Writing Kanji
           <ArrowRight className="ml-2 h-5 w-5" />

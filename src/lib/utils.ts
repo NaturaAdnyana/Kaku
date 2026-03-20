@@ -20,3 +20,17 @@ export function getSearchCountColor(count: number) {
   }
   return "bg-red-600 dark:bg-red-700 text-white dark:text-white";
 }
+
+export function isKanji(char: string): boolean {
+  if (char.length !== 1) return false;
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 0x4e00 && code <= 0x9fff) || // CJK Unified Ideographs
+    (code >= 0x3400 && code <= 0x4dbf) || // CJK Extension A
+    (code >= 0x20000 && code <= 0x2a6df) || // CJK Extension B
+    (code >= 0x2a700 && code <= 0x2b73f) || // CJK Extension C
+    (code >= 0x2b740 && code <= 0x2b81f) || // CJK Extension D
+    (code >= 0x2b820 && code <= 0x2ceaf) || // CJK Extension E
+    (code >= 0x2ceb0 && code <= 0x2ebef) // CJK Extension F
+  );
+}

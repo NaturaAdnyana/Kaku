@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { deleteKanji } from "@/app/actions/kanji";
+import { deleteKanji, getKanjiByWord } from "@/app/actions/kanji";
 import { Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,11 @@ export function DeleteWordButton({ word }: { word: string }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const router = useRouter();
+
+  const { data: dbData, isLoading } = useQuery({
+    queryKey: ["kanji-dbData", word],
+    queryFn: async () => await getKanjiByWord(word),
+  });
 
   const handleDelete = async () => {
     setLoading(true);
@@ -43,6 +49,8 @@ export function DeleteWordButton({ word }: { word: string }) {
       toast.error("Failed to delete word.");
     }
   };
+
+  if (isLoading || !dbData?.kanji) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>

@@ -1,10 +1,10 @@
-import { getKanjiByWord } from "@/app/actions/kanji";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { DeleteWordButton } from "@/components/DeleteWordButton";
-import { cn, getSearchCountColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import KanjiCarousel from "@/components/KanjiCarousel";
 
 type Props = {
   params: Promise<{
@@ -12,16 +12,11 @@ type Props = {
   }>;
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function KanjiDetailPage({ params }: Props) {
   // Await the params for Next.js 15
   const { word } = await params;
   const decodedWord = decodeURIComponent(word);
   const isSingleKanji = decodedWord.length === 1;
-
-  // 1. Fetch Local Data (searchCount) via Server Action
-  const dbData = await getKanjiByWord(decodedWord);
 
   // 2. Fetch Jisho API for Definitions
   let apiEntry = null;
@@ -51,47 +46,27 @@ export default async function KanjiDetailPage({ params }: Props) {
       <main className="flex-1 w-full max-w-md p-4 mx-auto sm:p-6 lg:max-w-lg">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-6">
-          <Link 
+          <Link
             href="/list"
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer",
+            )}
           >
             <ChevronLeft size={24} />
           </Link>
           <h1 className="text-xl font-bold text-center">Word Details</h1>
           <div className="min-w-10">
-            {dbData?.kanji && <DeleteWordButton word={decodedWord} />}
+            <DeleteWordButton word={decodedWord} />
           </div>
         </div>
 
         <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
           {/* Word Banner */}
-          <div className="flex flex-col items-center justify-center p-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm text-center relative overflow-hidden">
-            <span className="text-7xl mb-4">{decodedWord}</span>
-
-            {/* Reading Kana */}
-            {apiEntry?.japanese?.[0]?.reading && (
-              <span className="text-xl text-blue-600 dark:text-blue-400 font-medium">
-                {apiEntry.japanese[0].reading}
-              </span>
-            )}
-
-            {/* Local Stats Badge */}
-            {dbData?.kanji && dbData.kanji.searchCount > 1 && (
-              <div
-                className={cn(
-                  "absolute top-4 right-4 text-xs px-3 py-1 rounded-full flex justify-center gap-1 items-center",
-                  getSearchCountColor(dbData.kanji.searchCount),
-                )}
-              >
-                <span className="text-[10px] opacity-70 uppercase tracking-widest">
-                  Searched
-                </span>
-                <span className="text-sm font-bold">
-                  {dbData.kanji.searchCount}x
-                </span>
-              </div>
-            )}
-          </div>
+          <KanjiCarousel
+            decodedWord={decodedWord}
+            apiEntry={apiEntry}
+          />
 
           {isSingleKanji ? (
             <Tabs defaultValue="meaning" className="w-full">
