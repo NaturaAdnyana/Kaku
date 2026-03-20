@@ -66,7 +66,7 @@ export default function ChatPage({ params }: Props) {
 
   return (
     <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative">
-      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl shadow-sm bg-white dark:bg-zinc-950/50 jp-bg">
+      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl shadow-sm jp-bg">
         {/* Header Navigation */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
           <Link

@@ -275,7 +275,7 @@ export function KanjiList() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 relative z-10 pointer-events-none">
+                <div className="flex items-center gap-3 relative z-10 pointer-events-none">
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-3">
                     <div
                       className="text-[10px] sm:text-[11px] font-medium px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md sm:rounded-lg bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-center leading-none"
@@ -313,11 +313,11 @@ export function KanjiList() {
                     </div>
                   </div>
 
-                  <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800 hidden sm:block mx-1 opacity-50"></div>
+                  <div className="ml-3 w-px h-8 bg-zinc-200 dark:bg-zinc-800 hidden sm:block opacity-50"></div>
 
                   <button
                     onClick={(e) => handleDeleteClick(e, item.character)}
-                    className="mx-3 p-2 sm:p-2.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:text-red-600 active:bg-red-100 dark:active:bg-red-500/20 rounded-full transition-all duration-200 shrink-0 cursor-pointer pointer-events-auto z-20"
+                    className="p-3 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:text-red-600 active:bg-red-100 dark:active:bg-red-500/20 rounded-full transition-all duration-200 shrink-0 cursor-pointer pointer-events-auto z-20"
                     title="Delete Word"
                   >
                     <Trash2 size={18} />
