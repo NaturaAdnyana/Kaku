@@ -2,15 +2,13 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage, TextUIPart } from "ai";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { ChevronLeft, Send, AlertTriangle, Bot, User } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { ChevronLeft, Send, User, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, use, useState } from "react";
 import { cn } from "@/lib/utils";
-import Lottie from "lottie-react";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-
-type LottiePayload = Record<string, unknown> | null;
+import Image from "next/image";
 
 function getMessageText(parts: UIMessage["parts"]): string {
   return (parts ?? [])
@@ -30,31 +28,15 @@ export default function ChatPage({ params }: Props) {
   const decodedWord = decodeURIComponent(word);
 
   const [input, setInput] = useState("");
-  const [lottieData, setLottieData] = useState<LottiePayload>(null);
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
-
-  // Pick random lottie animation
-  useEffect(() => {
-    const controller = new AbortController();
-    const randomLevel = Math.floor(Math.random() * 4) + 1;
-    fetch(`/animations/level${randomLevel}.json`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => setLottieData(data))
-      .catch((err) => {
-        if ((err as Error).name !== "AbortError") {
-          console.error("Failed to load Lottie animation", err);
-        }
-      });
-
-    return () => controller.abort();
-  }, []);
 
   // Auto-start chat
   useEffect(() => {
@@ -136,14 +118,14 @@ export default function ChatPage({ params }: Props) {
               >
                 {m.role === "user" ? (
                   <User size={16} />
-                ) : lottieData ? (
-                  <Lottie
-                    animationData={lottieData}
-                    loop={true}
-                    className="w-14 h-14 pointer-events-none"
-                  />
                 ) : (
-                  <Bot size={22} />
+                  <Image
+                    src="/animations/bird-speak.gif"
+                    alt="Koijo"
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 object-contain pointer-events-none"
+                  />
                 )}
               </div>
 
@@ -169,15 +151,13 @@ export default function ChatPage({ params }: Props) {
             messages[messages.length - 1].role === "user" && (
               <div className="flex gap-3 max-w-[85%]">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 overflow-hidden">
-                  {lottieData ? (
-                    <Lottie
-                      animationData={lottieData}
-                      loop={true}
-                      className="w-14 h-14 pointer-events-none"
-                    />
-                  ) : (
-                    <Bot size={22} />
-                  )}
+                  <Image
+                    src="/animations/bird-speak.gif"
+                    alt="Koijo"
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 object-contain pointer-events-none"
+                  />
                 </div>
                 <div className="px-5 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-tl-sm flex items-center gap-1.5 h-12.5">
                   <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
