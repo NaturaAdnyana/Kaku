@@ -19,7 +19,10 @@ export function BottomNav() {
   const isPublicPage = ["/", "/about"].includes(pathname);
   if (pathname === "/login") return null;
   if (isPublicPage && !session) return null;
-  if (pathname.endsWith("/chat")) return null;
+
+  const isChatRoute = pathname.endsWith("/chat");
+  const isLearnRoute = pathname.includes("/learn/");
+  if (isChatRoute || isLearnRoute) return null;
 
   const handleLogout = async () => {
     setIsSigningOut(true);

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn, getSearchCountColor, isKanji } from "@/lib/utils";
 import Link from "next/link";
-import { RotateCw, MessageCircle } from "lucide-react";
+import { RotateCw, MessageCircle, PenLine } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getKanjiByWord } from "@/app/actions/kanji";
 import { useSvgAnimations } from "@/hooks/useSvgAnimations";
@@ -203,6 +203,15 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
                   </span>
                 </div>
               )}
+              {/* Learn Kanji Button */}
+              <Link
+                href={`/kanji/${encodeURIComponent(decodedWord)}/learn/${encodeURIComponent(char)}`}
+                className="absolute bottom-4 right-4 px-3 py-1.5 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-600 dark:text-green-400 rounded-full shadow-sm border border-green-200/50 dark:border-green-800/50 transition-transform active:scale-95 z-10 flex items-center gap-1.5 cursor-pointer"
+                title="Learn to write this Kanji"
+              >
+                <PenLine size={13} strokeWidth={2.5} />
+                <span className="text-xs font-bold">Learn</span>
+              </Link>
             </div>
           </CarouselItem>
         ))}
