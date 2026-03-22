@@ -37,6 +37,7 @@ export default function ChatPage({ params }: Props) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
+  const lastScrollRef = useRef<number>(0);
 
   // Auto-start chat
   useEffect(() => {
@@ -50,10 +51,16 @@ export default function ChatPage({ params }: Props) {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: status === "streaming" ? "auto" : "smooth",
-      block: "end",
-    });
+    if (status === "streaming") {
+      const now = Date.now();
+      // Throttle scrolling during stream to maximum 10fps (every 100ms) to prevent heavy layout thrashing
+      if (now - lastScrollRef.current > 100) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+        lastScrollRef.current = now;
+      }
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   }, [messages, status]);
 
   const handleSubmit = (e: React.FormEvent) => {
