@@ -124,13 +124,13 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
 
   const loadAndPlayAnimation = async (type: "success" | "error") => {
     setAnimationType(type);
-    const level = type === "success" ? 1 : 4;
     
     const messages = type === "success" ? successMessages : errorMessages;
     setAnimationMessage(messages[Math.floor(Math.random() * messages.length)]);
 
     try {
-      const res = await fetch(`/animations/level${level}.json`);
+      const animationFile = type === "success" ? "bird-flying-jump.json" : "level4.json";
+      const res = await fetch(`/animations/${animationFile}`);
       const data = await res.json();
       setAnimationData(data);
       
