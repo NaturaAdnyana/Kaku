@@ -71,7 +71,7 @@ export function SearchAnimation({
   }, [level, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/90 dark:bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-black animate-in fade-in duration-300">
       <div className="w-64 h-64 mb-8">
         {animationData ? (
           <Lottie animationData={animationData} loop={true} />

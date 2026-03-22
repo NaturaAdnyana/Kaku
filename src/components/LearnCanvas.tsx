@@ -310,7 +310,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
 
         {/* Lottie Animation Overlay */}
         {animationType && animationData && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/95 dark:bg-zinc-900/95 p-4">
             <Lottie
               animationData={animationData}
               loop={false}
