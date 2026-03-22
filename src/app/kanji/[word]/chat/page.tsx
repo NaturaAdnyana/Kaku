@@ -140,7 +140,7 @@ export default function ChatPage({ params }: Props) {
                 {m.role === "user" ? (
                   getMessageText(m.parts)
                 ) : (
-                  <MarkdownRenderer message={m} />
+                  <MarkdownRenderer content={getMessageText(m.parts)} />
                 )}
               </div>
             </div>
