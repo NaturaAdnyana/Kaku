@@ -302,7 +302,8 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
         {/* SVG Background Guide */}
         {svgContent && !animationType && (
           <div
-            className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none dark:invert dark:hue-rotate-180 p-8"
+            className="absolute inset-0 flex items-center justify-center pointer-events-none dark:invert dark:hue-rotate-180 p-8 transition-opacity duration-1000"
+            style={{ opacity: Math.max(0, 0.2 - streak * 0.04) }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
         )}
