@@ -8,6 +8,8 @@ import { useTheme } from "next-themes";
 import Lottie from "lottie-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useLottieAnimation } from "@/hooks/useLottieAnimation";
+import { LottiePlayer } from "@/components/LottieCanvas";
 
 const successMessages = [
   "You nailed it! 🥳",
@@ -50,10 +52,13 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
   const [showCandidates, setShowCandidates] = useState(false);
   const [streak, setStreak] = useState(0);
 
-  // Animation state
-  const [animationData, setAnimationData] = useState<Record<string, unknown> | null>(null);
+  // Animation state — filename drives the hook fetch; animationType controls visibility
+  const [animationFilename, setAnimationFilename] = useState<string | null>(null);
   const [animationType, setAnimationType] = useState<"success" | "error" | null>(null);
   const [animationMessage, setAnimationMessage] = useState<string | null>(null);
+
+  // Fetch + cache via shared hook (canvas-renderer friendly)
+  const { animationData } = useLottieAnimation(animationFilename);
 
   const redraw = useCallback(
     (currentTraces: Trace) => {
@@ -122,32 +127,25 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
     }
   }, [traces, redraw, animationType]);
 
-  const loadAndPlayAnimation = async (type: "success" | "error") => {
-    setAnimationType(type);
-    
+  const loadAndPlayAnimation = useCallback(async (type: "success" | "error") => {
+    const file = type === "success" ? "bird-flying-jump.json" : "level4.json";
     const messages = type === "success" ? successMessages : errorMessages;
+
+    setAnimationType(type);
+    setAnimationFilename(file);   // triggers useLottieAnimation (cached after first fetch)
     setAnimationMessage(messages[Math.floor(Math.random() * messages.length)]);
 
-    try {
-      const animationFile = type === "success" ? "bird-flying-jump.json" : "level4.json";
-      const res = await fetch(`/animations/${animationFile}`);
-      const data = await res.json();
-      setAnimationData(data);
-      
-      // Auto-hide animation after it finishes playing (let's say 3 seconds)
-      setTimeout(() => {
-        setAnimationType(null);
-        setAnimationData(null);
-        setAnimationMessage(null);
-        if (type === "success") {
-          handleClearCanvas();
-        }
-      }, 3000);
-    } catch (err) {
-      console.error("Failed to load animation", err);
+    // Auto-hide after 3 s
+    setTimeout(() => {
       setAnimationType(null);
-    }
-  };
+      setAnimationFilename(null);
+      setAnimationMessage(null);
+      if (type === "success") {
+        handleClearCanvas();
+      }
+    }, 3000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleValidation = async (submittedKanji: string) => {
     if (submittedKanji === targetKanji) {
@@ -311,7 +309,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
         {/* Lottie Animation Overlay */}
         {animationType && animationData && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/95 dark:bg-zinc-900/95 p-4">
-            <Lottie
+            <LottiePlayer
               animationData={animationData}
               loop={false}
               className="w-3/4 h-3/4 max-h-64 object-contain"

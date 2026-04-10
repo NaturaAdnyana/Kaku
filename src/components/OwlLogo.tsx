@@ -1,29 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Lottie from "lottie-react";
+import React from "react";
+import { LottiePlayer } from "@/components/LottieCanvas";
+import { useLottieAnimation } from "@/hooks/useLottieAnimation";
 
 interface OwlLogoProps {
   className?: string;
 }
 
 export function OwlLogo({ className }: OwlLogoProps) {
-  const [animationData, setAnimationData] = useState<object | null>(null);
-
-  useEffect(() => {
-    const loadOwl = async () => {
-      try {
-        const response = await fetch("/animations/level1.json");
-        if (response.ok) {
-          const data = await response.json();
-          setAnimationData(data);
-        }
-      } catch (e) {
-        console.error("Failed to load owl animation", e);
-      }
-    };
-    loadOwl();
-  }, []);
+  const { animationData } = useLottieAnimation("level1.json");
 
   if (!animationData) {
     return <div className={className} />;
@@ -31,7 +17,7 @@ export function OwlLogo({ className }: OwlLogoProps) {
 
   return (
     <div className={className}>
-      <Lottie animationData={animationData} loop={true} />
+      <LottiePlayer animationData={animationData} loop={true} maxFps={15} />
     </div>
   );
 }
