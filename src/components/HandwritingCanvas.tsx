@@ -281,7 +281,7 @@ export function HandwritingCanvas() {
             value={composedWord}
             onChange={(e) => setComposedWord(e.target.value)}
             placeholder="Write Kanji..."
-            className="w-full pl-11 pr-11 h-13 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-lg focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-800 transition-all outline-none border border-zinc-200/20 dark:border-zinc-800 shadow-sm"
+            className="w-full pl-11 pr-11 h-13 bg-blank rounded-base text-lg focus:ring-4 focus:ring-main focus:translate-x-boxShadowX focus:translate-y-boxShadowY focus:shadow-none transition-all outline-none border-2 border-border shadow-shadow"
           />
           {composedWord && (
             <button
@@ -295,7 +295,7 @@ export function HandwritingCanvas() {
         <Button
           onClick={handleSearchAndSave}
           disabled={!composedWord.trim() || isSaving}
-          className="px-6 rounded-2xl shadow-md transition-all active:scale-95 h-13 cursor-pointer bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 border-none"
+          className="px-6 h-13 cursor-pointer border-2"
         >
           {isSaving ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -308,7 +308,7 @@ export function HandwritingCanvas() {
       {/* Canvas Area */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-square bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-inner overflow-hidden text-black dark:text-white"
+        className="relative w-full aspect-square bg-blank border-2 border-border rounded-base shadow-shadow overflow-hidden text-foreground"
         style={{ touchAction: "none" }}
       >
         <canvas
@@ -327,30 +327,29 @@ export function HandwritingCanvas() {
         {/* Action overlay */}
         <div className="absolute top-2 right-2 flex gap-2">
           <Button
-            variant="secondary"
+            variant="neutral"
             size="icon"
-            className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur cursor-pointer"
+            className="w-10 h-10 rounded-full cursor-pointer backdrop-blur"
             onClick={handleUndo}
             disabled={traces.length === 0}
           >
-            <Undo size={16} />
+            <Undo size={18} />
           </Button>
           <Button
-            variant="destructive"
             size="icon"
-            className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur text-red-400 cursor-pointer"
+            className="w-10 h-10 rounded-full text-white cursor-pointer backdrop-blur bg-danger hover:bg-danger/80"
             onClick={handleClearCanvas}
             disabled={traces.length === 0}
           >
-            <Trash2 size={16} />
+            <Trash2 size={18} />
           </Button>
         </div>
       </div>
 
       {/* Candidates Area */}
-      <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 min-h-30 shadow-sm flex flex-col">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-semibold text-zinc-500">
+      <div className="w-full bg-blank border-2 border-border rounded-base p-5 shadow-shadow flex flex-col min-h-[140px]">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Recognized Kanji
           </h3>
           {isRecognizing && (
@@ -364,7 +363,7 @@ export function HandwritingCanvas() {
               <button
                 key={i}
                 onClick={() => handleSelectKanji(kanji)}
-                className="flex items-center justify-center p-3 text-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-colors relative active:scale-95 cursor-pointer"
+                className="flex items-center justify-center p-3 text-2xl bg-secondary border-2 border-border text-foreground rounded-base shadow-[2px_2px_0px_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all cursor-pointer font-jp"
               >
                 {kanji}
               </button>

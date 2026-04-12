@@ -55,7 +55,7 @@ export default async function KanjiDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative overflow-hidden pb-24">
+    <div className="flex flex-col min-h-dvh bg-bg font-sans relative overflow-hidden pb-24">
       <main className="flex-1 w-full max-w-md p-4 mx-auto sm:p-6 lg:max-w-lg">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-6">
@@ -85,16 +85,16 @@ export default async function KanjiDetailPage({ params }: Props) {
             <>
               <KanjiDetailsDisplay kanjiData={kanjiApiEntry} />
               <Tabs defaultValue="meaning" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl h-auto">
+                <TabsList className="w-full mb-6">
                 <TabsTrigger
                   value="meaning"
-                  className="rounded-xl data-active:bg-white dark:data-active:bg-zinc-900 data-active:shadow-sm py-3 text-sm font-bold transition-all"
+                  className="w-full"
                 >
                   Meaning
                 </TabsTrigger>
                 <TabsTrigger
                   value="words"
-                  className="rounded-xl data-active:bg-white dark:data-active:bg-zinc-900 data-active:shadow-sm py-3 text-sm font-bold transition-all"
+                  className="w-full"
                 >
                   Words
                 </TabsTrigger>
@@ -102,8 +102,8 @@ export default async function KanjiDetailPage({ params }: Props) {
               <TabsContent value="meaning" className="mt-0">
                 {kanjiApiEntry && kanjiApiEntry.meanings?.length > 0 ? (
                   <div className="flex flex-col gap-4">
-                    <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col gap-2">
-                      <p className="text-lg font-medium text-zinc-800 dark:text-zinc-100 leading-snug wrap-break-word capitalize">
+                    <div className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2">
+                      <p className="text-lg font-medium text-foreground leading-snug wrap-break-word capitalize">
                         {kanjiApiEntry.meanings.join(", ")}
                       </p>
                     </div>
@@ -122,16 +122,16 @@ export default async function KanjiDetailPage({ params }: Props) {
                         <Link
                           key={i}
                           href={`/kanji/${encodeURIComponent(wordChar)}`}
-                          className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex items-center gap-4 hover:border-blue-500/50 transition-colors cursor-pointer group"
+                          className="p-4 bg-blank border-2 border-border rounded-base shadow-shadow flex items-center gap-4 hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none transition-all cursor-pointer group"
                         >
-                          <div className="text-3xl font-medium w-12 text-center group-hover:scale-110 transition-transform">
+                          <div className="text-3xl font-bold font-jp w-12 text-center group-hover:scale-110 transition-transform">
                             {wordChar}
                           </div>
                           <div className="flex flex-col flex-1 min-w-0">
-                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                            <span className="text-xs text-foreground font-bold font-jp">
                               {entry.japanese[0].reading}
                             </span>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 wrap-break-word">
+                            <p className="text-sm text-foreground/80 wrap-break-word font-medium mt-0.5">
                               {entry.senses[0].english_definitions.join(", ")}
                             </p>
                           </div>
@@ -139,7 +139,7 @@ export default async function KanjiDetailPage({ params }: Props) {
                       );
                     })
                   ) : (
-                    <div className="p-8 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                    <div className="p-8 text-center text-foreground border-2 border-dashed border-border rounded-base bg-secondary">
                       No additional words found.
                     </div>
                   )}
@@ -165,7 +165,7 @@ function MeaningContent({
 }) {
   if (!apiEntry) {
     return (
-      <div className="p-8 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+      <div className="p-8 text-center text-foreground border-2 border-dashed border-border rounded-base bg-secondary">
         No definition found on Jisho for this word.
       </div>
     );
@@ -178,7 +178,7 @@ function MeaningContent({
       {apiEntry.senses?.map((sense: any, index: number) => (
         <div
           key={index}
-          className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col gap-2"
+          className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2"
         >
           {/* Part of Speech */}
           {sense.parts_of_speech?.length > 0 && (
@@ -186,7 +186,7 @@ function MeaningContent({
               {sense.parts_of_speech.map((pos: string, idx: number) => (
                 <span
                   key={idx}
-                  className="text-[10px] uppercase font-bold tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-md"
+                  className="text-[10px] uppercase font-bold tracking-wider bg-secondary border border-border text-foreground px-2 py-0.5 rounded-sm"
                 >
                   {pos}
                 </span>
@@ -194,8 +194,7 @@ function MeaningContent({
             </div>
           )}
 
-          {/* English Definitions */}
-          <p className="text-lg font-medium text-zinc-800 dark:text-zinc-100 leading-snug wrap-break-word">
+          <p className="text-lg font-medium text-foreground leading-snug wrap-break-word">
             {sense.english_definitions?.join("; ")}
           </p>
         </div>
@@ -210,48 +209,48 @@ function KanjiDetailsDisplay({ kanjiData }: { kanjiData: Record<string, unknown>
   const kd = kanjiData as Record<string, any>;
   
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+    <div className="bg-blank border-2 border-border rounded-base p-5 shadow-shadow flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 mb-6">
       <div className="grid grid-cols-3 gap-4">
         {kd.jlpt !== null && (
-          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">JLPT</span>
-            <span className="font-bold text-lg">N{kd.jlpt}</span>
+          <div className="flex flex-col gap-1 items-center justify-center p-3 bg-secondary border-2 border-border rounded-base">
+            <span className="text-[10px] uppercase text-foreground font-bold tracking-wider">JLPT</span>
+            <span className="font-bold text-xl">N{kd.jlpt}</span>
           </div>
         )}
         {kd.grade !== null && (
-          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">Grade</span>
-            <span className="font-bold text-lg">{kd.grade}</span>
+          <div className="flex flex-col gap-1 items-center justify-center p-3 bg-secondary border-2 border-border rounded-base">
+            <span className="text-[10px] uppercase text-foreground font-bold tracking-wider">Grade</span>
+            <span className="font-bold text-xl">{kd.grade}</span>
           </div>
         )}
         {kd.stroke_count !== null && (
-          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">Strokes</span>
-            <span className="font-bold text-lg">{kd.stroke_count}</span>
+          <div className="flex flex-col gap-1 items-center justify-center p-3 bg-secondary border-2 border-border rounded-base">
+            <span className="text-[10px] uppercase text-foreground font-bold tracking-wider">Strokes</span>
+            <span className="font-bold text-xl">{kd.stroke_count}</span>
           </div>
         )}
       </div>
 
       {(kd.kun_readings?.length > 0 || kd.on_readings?.length > 0) && (
-        <div className="flex flex-col gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="flex flex-col gap-5 pt-4 border-t-2 border-border mt-1">
           {kd.kun_readings?.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500">Kun</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs uppercase font-extrabold tracking-widest text-foreground">Kun</span>
               <div className="flex flex-wrap gap-2">
                 {kd.kun_readings.map((r: string, i: number) => (
-                  <span key={i} className="text-sm font-medium px-2.5 py-1 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-300 border border-orange-200/50 dark:border-orange-900/50 shadow-sm rounded-lg">
+                  <span key={i} className="text-sm font-bold px-3 py-1 bg-main text-main-foreground border-2 border-border shadow-[2px_2px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_#FFFFFF] rounded-base">
                     {r}
                   </span>
                 ))}
               </div>
             </div>
           )}
-          {kanjiData.on_readings?.length > 0 && (
-            <div className="flex flex-col gap-1.5 pt-1">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-500">On</span>
+          {kd.on_readings?.length > 0 && (
+            <div className="flex flex-col gap-2 pt-1">
+              <span className="text-xs uppercase font-extrabold tracking-widest text-foreground">On</span>
               <div className="flex flex-wrap gap-2">
-                {kanjiData.on_readings.map((r: string, i: number) => (
-                  <span key={i} className="text-sm font-medium px-2.5 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50 shadow-sm rounded-lg">
+                {kd.on_readings.map((r: string, i: number) => (
+                  <span key={i} className="text-sm font-bold px-3 py-1 bg-white dark:bg-zinc-800 text-foreground border-2 border-border shadow-[2px_2px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_#FFFFFF] rounded-base">
                     {r}
                   </span>
                 ))}

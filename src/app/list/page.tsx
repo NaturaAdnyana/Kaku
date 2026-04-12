@@ -3,24 +3,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ListPage() {
   return (
-    <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative overflow-hidden pb-24">
-      <main className="flex-1 w-full max-w-md p-4 mx-auto sm:p-6 lg:max-w-lg">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-bg pb-24 font-sans">
+      <main className="mx-auto flex-1 w-full max-w-md p-4 sm:p-6 lg:max-w-lg">
         <div className="flex flex-col h-full animate-in fade-in zoom-in-95 duration-200">
-          <h2 className="mb-4 text-2xl font-bold text-center">My Words</h2>
+          <div className="mb-6 space-y-2 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+              Saved Collection
+            </p>
+            <h2 className="text-3xl font-bold text-center text-foreground">
+              My Words
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Reopen saved words and kanji without the clutter.
+            </p>
+          </div>
           
           <Tabs defaultValue="words" className="w-full">
-            <div className="px-1">
-              <TabsList className="grid w-full grid-cols-2 mb-4 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl h-auto">
-                <TabsTrigger
-                  value="words"
-                  className="rounded-xl data-[active=true]:bg-white dark:data-[active=true]:bg-zinc-900 data-[active=true]:shadow-sm py-3 text-sm font-bold transition-all"
-                >
+            <div className="mb-6 px-1">
+              <TabsList className="w-full bg-background/85 backdrop-blur-sm">
+                <TabsTrigger value="words" className="flex-1">
                   Words
                 </TabsTrigger>
-                <TabsTrigger
-                  value="kanji"
-                  className="rounded-xl data-[active=true]:bg-white dark:data-[active=true]:bg-zinc-900 data-[active=true]:shadow-sm py-3 text-sm font-bold transition-all"
-                >
+                <TabsTrigger value="kanji" className="flex-1">
                   Kanji
                 </TabsTrigger>
               </TabsList>
@@ -34,7 +38,6 @@ export default function ListPage() {
               <KanjiList type="kanji" />
             </TabsContent>
           </Tabs>
-
         </div>
       </main>
     </div>

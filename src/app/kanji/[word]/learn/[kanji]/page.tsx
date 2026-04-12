@@ -2,10 +2,8 @@
 
 import { use } from "react";
 import { LearnCanvas } from "@/components/LearnCanvas";
-import { buttonVariants } from "@/components/ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { useSvgAnimations } from "@/hooks/useSvgAnimations";
 
 type Props = {
@@ -24,47 +22,44 @@ export default function LearnKanjiPage({ params }: Props) {
   const svgContent = animations.length > 0 ? animations[0].svgContent : "";
 
   return (
-    <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative">
-      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl shadow-sm bg-white dark:bg-zinc-950/50 relative">
-        {/* Header Navigation */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
-          <Link
-            href={`/kanji/${encodeURIComponent(decodedWord)}`}
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer",
-            )}
-            aria-label="Back to word details"
-          >
-            <ChevronLeft size={24} />
-          </Link>
-          <div className="flex flex-col items-center">
-            <h1 className="text-lg font-bold">Learn to Write</h1>
-            <span className="text-xs text-zinc-500 font-medium">
-              Target: {decodedKanji}
-            </span>
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-bg pb-24 font-sans">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col p-4 sm:p-6 lg:max-w-lg">
+        <div className="flex h-full flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="mb-4 flex items-center justify-between">
+            <Link
+              href={`/kanji/${encodeURIComponent(decodedWord)}`}
+              className="flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-secondary text-foreground shadow-shadow transition-all active:translate-x-boxShadowX active:translate-y-boxShadowY active:shadow-none"
+              aria-label="Back to word details"
+            >
+              <ChevronLeft size={22} />
+            </Link>
+            <div className="flex flex-col items-center text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Learn to Write
+              </p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {decodedKanji}
+              </h1>
+            </div>
+            <div className="w-11" />
           </div>
-          <div className="min-w-10"></div>
-        </div>
 
-        <div className="flex-1 flex flex-col p-4">
-          <div className="flex flex-col items-center text-center">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Trace over the faint background guide.
-              <br /> Make sure to get the stroke order roughly correct for
-              better recognition.
-              <br />
-              <span className="font-semibold text-zinc-600 dark:text-zinc-300">
-                Tip: Use a touch pen on a touchscreen for a better experience.
-              </span>
+          <div className="mb-4 rounded-base border-2 border-border bg-blank p-4 text-center shadow-shadow">
+            <p className="text-sm font-medium text-foreground">
+              Trace over the guide and keep the stroke order roughly correct.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Tip: a touch pen on a touchscreen usually gives the best result.
             </p>
           </div>
 
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-1 flex-col">
             {loading ? (
-              <div className="flex flex-col items-center gap-2 text-zinc-400">
-                <Loader2 className="animate-spin w-8 h-8" />
-                <span className="text-sm text-zinc-500">Loading guide...</span>
+              <div className="flex flex-1 flex-col items-center justify-center rounded-base border-2 border-border bg-blank p-8 text-center shadow-shadow">
+                <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+                <span className="mt-3 text-sm font-bold text-muted-foreground">
+                  Loading guide...
+                </span>
               </div>
             ) : (
               <LearnCanvas targetKanji={decodedKanji} svgContent={svgContent} />

@@ -42,10 +42,10 @@ function KanjiSVG({ svgContent }: { svgContent: string }) {
       />
       <button
         onClick={handleReplay}
-        className="absolute top-1/2 -translate-y-1/2 -right-10 p-2 bg-zinc-100 hover:bg-orange-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 active:text-orange-600 dark:text-zinc-400 dark:active:text-orange-400 rounded-full shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 transition-transform active:scale-95 z-10"
+        className="absolute top-1/2 -translate-y-1/2 -right-10 p-2 bg-blank text-foreground shadow-[2px_2px_0_var(--border)] border-2 border-border transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-bold rounded-base z-10"
         title="Replay Animation"
       >
-        <RotateCw size={14} strokeWidth={2.5} />
+        <RotateCw size={14} strokeWidth={3} />
       </button>
     </div>
   );
@@ -113,7 +113,7 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
         <CarouselItem className="flex flex-col items-center justify-center h-50">
           <div
             className={cn(
-              "flex flex-col items-center justify-center h-full w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm text-center relative overflow-hidden box-border transition-all duration-300",
+              "flex flex-col items-center justify-center h-full w-full bg-blank border-2 border-border rounded-base shadow-shadow text-center relative overflow-hidden box-border",
               containerPadding,
             )}
           >
@@ -132,7 +132,7 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
                         key={`${char}-${i}`}
                         href={`/kanji/${encodeURIComponent(char)}`}
                         className={cn(
-                          "bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg aspect-square mx-0.5 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-200 dark:hover:border-orange-800/50 hover:text-orange-600 dark:hover:text-orange-400 hover:-translate-y-1 active:translate-y-0 shadow-sm hover:shadow-md transition-all cursor-pointer inline-flex items-center justify-center",
+                          "bg-secondary border-2 border-border text-foreground rounded-base mx-0.5 shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer inline-flex items-center justify-center font-bold",
                           tilePadding,
                         )}
                         title={`Inspect ${char}`}
@@ -157,7 +157,7 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
 
             {/* Reading Kana */}
             {apiEntry?.japanese?.[0]?.reading && (
-              <span className="text-xl text-zinc-700 dark:text-zinc-300 font-medium">
+              <span className="text-xl text-foreground font-bold mt-2">
                 {apiEntry.japanese[0].reading}
               </span>
             )}
@@ -165,10 +165,10 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
             {/* Koijo Chat Button */}
             <Link
               href={`/kanji/${encodeURIComponent(decodedWord)}/chat`}
-              className="absolute bottom-4 left-4 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full shadow-sm border border-blue-200/50 dark:border-blue-800/50 transition-transform active:scale-95 z-10 flex items-center gap-1.5"
+              className="absolute bottom-4 left-4 px-3 py-1.5 bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] border-2 border-border rounded-base transition-transform z-10 flex items-center gap-1.5"
               title="Chat with Koijo about this word"
             >
-              <MessageCircle size={13} strokeWidth={2.5} />
+              <MessageCircle size={14} strokeWidth={3} />
               <span className="text-xs font-bold">Koijo</span>
             </Link>
 
@@ -176,12 +176,11 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
             {dbData?.kanji && dbData.kanji.searchCount > 1 && (
               <div
                 className={cn(
-                  "absolute bottom-4 right-4 px-3 py-1.5 rounded-full shadow-sm border flex items-center gap-1.5 transition-transform active:scale-95",
-                  getSearchCountColor(dbData.kanji.searchCount),
+                  "absolute bottom-4 right-4 px-3 py-1.5 rounded-base bg-secondary text-foreground shadow-[2px_2px_0_var(--border)] border-2 border-border flex items-center gap-1.5",
                 )}
               >
-                <span className="text-[10px] opacity-70 uppercase tracking-widest">Searched</span>
-                <span className="text-xs font-bold">{dbData.kanji.searchCount}x</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest">Searched</span>
+                <span className="text-xs font-black">{dbData.kanji.searchCount}x</span>
               </div>
             )}
           </div>
@@ -191,7 +190,7 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
             key={`${char}-${index}`}
             className="flex flex-col items-center justify-center h-50"
           >
-            <div className="flex flex-col items-center justify-center h-full w-full p-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm text-center relative overflow-hidden box-border group transition-all duration-300 hover:border-zinc-300 dark:hover:border-zinc-700">
+            <div className="flex flex-col items-center justify-center h-full w-full p-10 bg-blank border-2 border-border rounded-base shadow-shadow text-center relative overflow-hidden box-border group transition-all duration-300">
               <KanjiSVG svgContent={svgContent} />
               {decodedWord.length > 1 && (
                 <div className="text-center">
@@ -206,10 +205,10 @@ function KanjiCarouselContent({ decodedWord, apiEntry }: KanjiCarouselProps) {
               {/* Learn Kanji Button */}
               <Link
                 href={`/kanji/${encodeURIComponent(decodedWord)}/learn/${encodeURIComponent(char)}`}
-                className="absolute bottom-4 right-4 px-3 py-1.5 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-600 dark:text-green-400 rounded-full shadow-sm border border-green-200/50 dark:border-green-800/50 transition-transform active:scale-95 z-10 flex items-center gap-1.5 cursor-pointer"
+                className="absolute bottom-4 right-4 px-3 py-1.5 bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] border-2 border-border rounded-base transition-transform z-10 flex items-center gap-1.5"
                 title="Learn to write this Kanji"
               >
-                <PenLine size={13} strokeWidth={2.5} />
+                <PenLine size={14} strokeWidth={3} />
                 <span className="text-xs font-bold">Learn</span>
               </Link>
             </div>

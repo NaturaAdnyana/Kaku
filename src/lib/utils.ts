@@ -7,18 +7,18 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getSearchCountColor(count: number) {
   if (count < 3) {
-    return "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400";
+    return "bg-secondary text-foreground";
   }
   if (count < 5) {
-    return "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400";
+    return "bg-main text-main-foreground";
   }
   if (count < 10) {
-    return "bg-orange-200 dark:bg-orange-800/60 text-orange-800 dark:text-orange-300";
+    return "bg-yellow-300 text-black";
   }
   if (count < 20) {
-    return "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400";
+    return "bg-orange-300 text-black";
   }
-  return "bg-red-600 dark:bg-red-700 text-white dark:text-white";
+  return "bg-danger text-white";
 }
 
 export function isKanji(char: string): boolean {

@@ -76,7 +76,7 @@ function NavItem({ isActive, label, icon, className }: NavItemProps) {
       {isActive && (
         <motion.span
           layoutId="nav-active-pill"
-          className="absolute inset-0 rounded-full bg-white/15 dark:bg-black/15"
+          className="absolute inset-0 rounded-base bg-main border-2 border-border shadow-[2px_2px_0_var(--border)]"
           transition={{ type: "spring", stiffness: 400, damping: 35 }}
         />
       )}
@@ -84,7 +84,7 @@ function NavItem({ isActive, label, icon, className }: NavItemProps) {
       {/* Hover glow — non-active only */}
       {!isActive && (
         <motion.span
-          className="absolute inset-0 rounded-full bg-white/[0.07] dark:bg-black/[0.07]"
+          className="absolute inset-0 rounded-base bg-secondary border-2 border-border shadow-[2px_2px_0_var(--border)]"
           variants={hoverBgVariants}
         />
       )}
@@ -144,8 +144,8 @@ export function BottomNav() {
     }
   };
 
-  const baseText = "text-zinc-400 dark:text-zinc-500";
-  const activeText = "text-white dark:text-black";
+  const baseText = "text-muted-foreground";
+  const activeText = "text-main-foreground";
 
   const themeIcon = (
     <div className="relative w-[22px] h-[22px] flex items-center justify-center">
@@ -161,7 +161,7 @@ export function BottomNav() {
   );
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-zinc-900/90 dark:bg-zinc-100/90 backdrop-blur-xl rounded-full shadow-2xl p-2 flex items-center justify-around z-50 border border-white/10 dark:border-black/5 gap-2">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-blank rounded-base shadow-shadow p-2 flex items-center justify-around z-50 border-2 border-border gap-2 transition-all">
       <Link
         href="/write"
         className={cn("flex-1", pathname === "/write" ? activeText : baseText)}
@@ -205,7 +205,7 @@ export function BottomNav() {
           />
         </button>
       ) : (
-        <Link href="/login" aria-label="Login" className="flex-1 text-blue-400/80">
+        <Link href="/login" aria-label="Login" className="flex-1 text-blue-600">
           <NavItem label="Login" icon={<LogIn size={22} />} />
         </Link>
       )}

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Undo, Trash2, Loader2, Check } from "lucide-react";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
 import { useTheme } from "next-themes";
-import Lottie from "lottie-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLottieAnimation } from "@/hooks/useLottieAnimation";
@@ -289,45 +288,44 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm mx-auto space-y-4">
-      
-      {/* Canvas Area */}
+    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-4">
       <div
         ref={containerRef}
-        className="relative w-full aspect-square bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-inner overflow-hidden text-black dark:text-white"
+        className="relative w-full aspect-square overflow-hidden rounded-base border-2 border-border bg-blank text-foreground shadow-shadow"
         style={{ touchAction: "none" }}
       >
-        {/* SVG Background Guide */}
         {svgContent && !animationType && (
           <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none dark:invert dark:hue-rotate-180 p-8 transition-opacity duration-1000"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center p-8 transition-opacity duration-1000 dark:invert dark:hue-rotate-180"
             style={{ opacity: Math.max(0, 0.2 - streak * 0.04) }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
         )}
 
-        {/* Lottie Animation Overlay */}
         {animationType && animationData && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/95 dark:bg-zinc-900/95 p-4">
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-blank p-4">
             <LottiePlayer
               animationData={animationData}
               loop={false}
               className="w-3/4 h-3/4 max-h-64 object-contain"
             />
             {animationMessage && (
-              <div className={cn(
-                "mt-2 font-bold text-lg text-center animate-in fade-in slide-in-from-bottom-2",
-                animationType === "success" ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-400"
-              )}>
+              <div
+                className={cn(
+                  "mt-3 rounded-base border-2 border-border px-4 py-2 text-center text-lg font-bold shadow-shadow animate-in fade-in slide-in-from-bottom-2",
+                  animationType === "success"
+                    ? "bg-main text-main-foreground"
+                    : "bg-danger text-white",
+                )}
+              >
                 {animationMessage}
               </div>
             )}
           </div>
         )}
 
-        {/* Streak Counter Overlay */}
         {streak > 0 && (
-          <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5 bg-white/90 dark:bg-black/90 backdrop-blur pl-2 pr-3.5 py-1.5 rounded-full border border-orange-200 dark:border-orange-900/50 shadow-sm animate-in zoom-in pointer-events-none">
+          <div className="pointer-events-none absolute top-3 left-3 z-30 flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary py-1.5 pl-2 pr-3.5 shadow-[2px_2px_0_var(--border)] animate-in zoom-in">
             <Image
               src="/animations/fire.gif"
               alt="Streak Fire"
@@ -336,7 +334,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
               unoptimized
               className="object-contain"
             />
-            <span className="font-extrabold text-orange-500 dark:text-orange-400 text-sm drop-shadow-sm">
+            <span className="text-sm font-black text-orange-500 dark:text-orange-300">
               {streak}
             </span>
           </div>
@@ -358,21 +356,20 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
           )}
         />
 
-        {/* Action overlay */}
         <div className="absolute top-2 right-2 flex gap-2 z-20">
           <Button
-            variant="secondary"
+            variant="neutral"
             size="icon"
-            className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur cursor-pointer"
+            className="h-9 w-9 rounded-base cursor-pointer bg-secondary"
             onClick={handleUndo}
             disabled={traces.length === 0 || !!animationType}
           >
             <Undo size={16} />
           </Button>
           <Button
-            variant="destructive"
+            variant="noShadow"
             size="icon"
-            className="w-8 h-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur text-red-400 cursor-pointer"
+            className="h-9 w-9 rounded-base cursor-pointer bg-danger text-white"
             onClick={handleClearCanvas}
             disabled={traces.length === 0 || !!animationType}
           >
@@ -384,7 +381,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
       <Button
         onClick={handleSubmit}
         disabled={traces.length === 0 || isRecognizing || !!animationType}
-        className="w-full rounded-2xl shadow-md transition-all active:scale-95 h-13 cursor-pointer bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 border-none font-bold text-lg"
+        className="h-13 w-full cursor-pointer text-lg font-bold"
       >
         {isRecognizing ? (
           <Loader2 className="w-5 h-5 animate-spin" />
@@ -395,11 +392,10 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
         )}
       </Button>
 
-      {/* Fallback Candidates Area (Shown after 3 fails) */}
       {showCandidates && candidates.length > 0 && (
-        <div className="w-full bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-2xl p-4 shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex w-full flex-col rounded-base border-2 border-border bg-blank p-4 shadow-shadow animate-in fade-in slide-in-from-bottom-2">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">
+            <h3 className="text-sm font-bold text-foreground">
               Having trouble? Select your intended Kanji:
             </h3>
           </div>
@@ -409,7 +405,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
               <button
                 key={kanji + i}
                 onClick={() => handleValidation(kanji)}
-                className="flex items-center justify-center p-3 text-2xl bg-white hover:bg-zinc-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-colors relative active:scale-95 cursor-pointer border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                className="relative flex cursor-pointer items-center justify-center rounded-base border-2 border-border bg-secondary p-3 text-2xl font-bold shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 {kanji}
               </button>

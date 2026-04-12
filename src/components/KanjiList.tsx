@@ -6,10 +6,16 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { getKanjiList, getWordList, deleteKanji, deleteWord } from "@/app/actions/kanji";
-import { Loader2, Search, Trash2, X } from "lucide-react";
+import { getKanjiList, getWordList, deleteWord } from "@/app/actions/kanji";
+import {
+  ArrowDownAZ,
+  Calendar,
+  Loader2,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
 import { useDebounce } from "use-debounce";
 import {
   AlertDialog,
@@ -30,7 +36,6 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { ArrowDownAZ, Calendar } from "lucide-react";
 
 // Skeleton component for list items only
 export function KanjiListSkeleton({ count = 5 }: { count?: number }) {
@@ -60,9 +65,9 @@ export function KanjiSkeleton() {
     <div className="flex flex-col w-full gap-4">
       {/* Search Bar Skeleton */}
       <div className="pt-2 pb-4 px-2 mb-2 flex flex-col gap-4">
-        <div className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/20 dark:border-zinc-800 rounded-2xl animate-pulse" />
+        <div className="w-full h-12 bg-secondary border-2 border-border rounded-base animate-pulse shadow-shadow" />
         <div className="flex justify-between items-center px-1">
-          <div className="w-32 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          <div className="w-32 h-4 bg-secondary rounded animate-pulse" />
         </div>
       </div>
       <KanjiListSkeleton />
@@ -111,7 +116,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: type === "kanji" ? deleteKanji : deleteWord,
+    mutationFn: deleteWord,
     onSuccess: (_, character) => {
       toast.success(`Deleted "${character}" successfully`);
       queryClient.invalidateQueries({ queryKey: [`${type}-list`] });
@@ -126,6 +131,12 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   }, [data]);
 
   const total = data?.pages[0]?.totalCount ?? 0;
+  const collectionLabel = type === "kanji" ? "Saved Kanji" : "Saved Words";
+  const entityLabel = type === "kanji" ? "kanji" : "words";
+  const emptyLabel =
+    type === "kanji"
+      ? "You haven't saved any kanji yet."
+      : "You haven't saved any words yet.";
 
   React.useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -150,86 +161,107 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
 
   return (
     <div className="flex flex-col w-full pb-20">
-      {/* Search Header - Always Persistent */}
-      <div className="sticky top-0 z-10 dark:bg-zinc-950/80 backdrop-blur-md pt-2 pb-4 px-2 mb-2 flex flex-col gap-4">
-        <div className="relative group">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search saved words..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-sm focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-800 transition-all outline-none border border-zinc-200/20 dark:border-zinc-800"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-        <div className="flex justify-between items-center px-1">
-          <span className="text-sm text-zinc-500 font-medium">
-            {debouncedSearch
-              ? `Results for "${debouncedSearch}"`
-              : "Saved Words"}
-            : {total}
-          </span>
+      <div className="sticky top-0 z-10 mb-4 pt-2 pb-4">
+        <div className="flex flex-col gap-3">
+          <div className="relative group">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-200"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder={`Search ${type === "kanji" ? "saved kanji" : "saved words"}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-blank border-2 border-border shadow-shadow rounded-base text-sm text-foreground py-3 pr-11 pl-11 outline-none transition-all placeholder:text-muted-foreground focus:ring-4 focus:ring-main focus:translate-x-boxShadowX focus:translate-y-boxShadowY focus:shadow-none"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
 
-          <Select
-            value={sortBy}
-            onValueChange={(val) => {
-              if (val === "newest" || val === "most-searched") {
-                setSortBy(val);
-              }
-            }}
-          >
-            <SelectTrigger className="bg-zinc-100 dark:bg-zinc-900 border-none shadow-none text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 gap-2 h-9 px-3 rounded-xl transition-colors">
-              <div className="flex items-center gap-1.5 pointer-events-none">
-                {sortBy === "newest" ? (
-                  <Calendar size={14} className="shrink-0 text-blue-500" />
-                ) : (
-                  <ArrowDownAZ size={14} className="shrink-0 text-orange-500" />
-                )}
-                <span className="truncate">
-                  {sortBy === "newest" ? "Newest First" : "Most Searched"}
-                </span>
-              </div>
-            </SelectTrigger>
-            <SelectContent align="end" className="min-w-44 p-1.5 rounded-2xl">
-              <SelectItem
-                value="newest"
-                className="rounded-xl focus:bg-zinc-100 dark:focus:bg-zinc-800"
-              >
-                <div className="flex items-center gap-2 py-0.5">
-                  <Calendar size={14} className="text-blue-500" />
-                  <span>Newest First</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="inline-flex items-center border-2 border-border bg-main px-3 py-1 text-sm font-bold text-main-foreground shadow-shadow rounded-base">
+                {total} {total === 1 ? "item" : "items"}
+              </span>
+              <span className="truncate text-sm font-bold text-foreground">
+                {debouncedSearch
+                  ? `Results for "${debouncedSearch}"`
+                  : collectionLabel}
+              </span>
+            </div>
+
+            <Select
+              value={sortBy}
+              onValueChange={(val) => {
+                if (val === "newest" || val === "most-searched") {
+                  setSortBy(val);
+                }
+              }}
+            >
+              <SelectTrigger className="h-10 w-auto px-4">
+                <div className="pointer-events-none flex items-center gap-1.5">
+                  {sortBy === "newest" ? (
+                    <Calendar
+                      size={14}
+                      className="shrink-0 text-blue-500 dark:text-sky-300"
+                    />
+                  ) : (
+                    <ArrowDownAZ
+                      size={14}
+                      className="shrink-0 text-orange-500 dark:text-amber-300"
+                    />
+                  )}
+                  <span className="truncate">
+                    {sortBy === "newest" ? "Newest First" : "Most Searched"}
+                  </span>
                 </div>
-              </SelectItem>
-              <SelectItem
-                value="most-searched"
-                className="rounded-xl focus:bg-zinc-100 dark:focus:bg-zinc-800"
+              </SelectTrigger>
+              <SelectContent
+                align="end"
+                className="min-w-44 rounded-base p-1.5"
               >
-                <div className="flex items-center gap-2 py-0.5">
-                  <ArrowDownAZ size={14} className="text-orange-500" />
-                  <span>Most Searched</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+                <SelectItem
+                  value="newest"
+                  className="rounded-base"
+                >
+                  <div className="flex items-center gap-2 py-0.5">
+                    <Calendar
+                      size={14}
+                      className="text-blue-500 dark:text-sky-300"
+                    />
+                    <span>Newest First</span>
+                  </div>
+                </SelectItem>
+                <SelectItem
+                  value="most-searched"
+                  className="rounded-base"
+                >
+                  <div className="flex items-center gap-2 py-0.5">
+                    <ArrowDownAZ
+                      size={14}
+                      className="text-orange-500 dark:text-amber-300"
+                    />
+                    <span>Most Searched</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       {isLoading ? (
         <KanjiListSkeleton />
       ) : isError ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center text-red-500">
-          <p>Failed to load Kanji.</p>
+        <div className="flex flex-col items-center justify-center rounded-base border-2 border-dashed border-border bg-blank py-20 text-center text-red-500 shadow-shadow">
+          <p>Failed to load saved {entityLabel}.</p>
           <button
             onClick={() =>
               queryClient.invalidateQueries({ queryKey: [`${type}-list`] })
@@ -240,12 +272,8 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
           </button>
         </div>
       ) : kanjiItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-500">
-          <p>
-            {debouncedSearch
-              ? "No matches found."
-              : "You haven't saved any Kanji yet."}
-          </p>
+        <div className="flex flex-col items-center justify-center rounded-base border-2 border-dashed border-border bg-blank py-20 text-center text-zinc-500 shadow-shadow dark:text-muted-foreground">
+          <p>{debouncedSearch ? "No matches found." : emptyLabel}</p>
           {!debouncedSearch && (
             <p className="text-sm mt-2">
               Go to the Write tab to start practicing!
@@ -256,72 +284,72 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
         <div className="flex flex-col gap-3">
           {kanjiItems.map((item, index) => {
             const isLast = index === kanjiItems.length - 1;
+            const itemLength = Array.from(item.character).length;
+            const updatedLabel = new Date(item.updatedAt).toLocaleDateString(
+              undefined,
+              {
+                month: "short",
+                day: "numeric",
+              },
+            );
+
             return (
               <div
                 key={item.id}
                 ref={isLast ? ref : null}
-                className="group relative flex items-center justify-between p-3 sm:p-4 bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                className="group relative flex cursor-pointer items-center justify-between gap-4 rounded-base border-2 border-border bg-blank p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+                onClick={() => {
+                  window.location.href = `/kanji/${encodeURIComponent(item.character)}`;
+                }}
               >
-                <Link
-                  href={`/kanji/${encodeURIComponent(item.character)}`}
-                  className="absolute inset-0 z-0 rounded-2xl"
-                  aria-label={`View details for ${item.character}`}
-                />
-
-                <div className="flex items-center gap-4 relative z-10 pointer-events-none">
-                  <div className="min-w-12 px-3 h-12 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-100 dark:border-zinc-700/50 rounded-xl group-hover:bg-orange-50/50 dark:group-hover:bg-orange-900/20 group-hover:border-orange-200 dark:group-hover:border-orange-800/50 transition-colors duration-300 shadow-sm shrink-0">
-                    <span className="text-3xl font-semibold font-jp text-zinc-800 dark:text-zinc-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 whitespace-nowrap truncate max-w-40 sm:max-w-xs">
+                <div className="relative z-10 flex min-w-0 flex-1 items-center gap-4">
+                  <div className="flex h-14 min-w-14 max-w-full shrink-0 items-center justify-center rounded-base border-2 border-border bg-main px-3 transition-colors duration-300 group-hover:bg-accent">
+                    <span
+                      className={cn(
+                        "truncate font-jp font-bold leading-none text-main-foreground",
+                        itemLength > 3
+                          ? "text-lg"
+                          : itemLength > 1
+                            ? "text-2xl"
+                            : "text-4xl",
+                      )}
+                    >
                       {item.character}
                     </span>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-3 relative z-10 pointer-events-none">
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-3">
-                    <div
-                      className="text-[10px] sm:text-[11px] font-medium px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md sm:rounded-lg bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-center leading-none"
-                      title="Last Updated"
-                    >
-                      <Calendar
-                        size={10}
-                        className="mr-1 sm:mr-1.5 opacity-70 sm:w-3 sm:h-3"
-                      />
-                      {new Date(item.updatedAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </div>
-
-                    <div
-                      className={cn(
-                        "text-[10px] sm:text-[11px] font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md sm:rounded-lg flex items-center shadow-sm ring-1 ring-inset ring-black/5 dark:ring-white/5 leading-none",
-                        getSearchCountColor(item.searchCount),
-                      )}
-                      title="Times Searched"
-                    >
-                      <Search
-                        size={10}
-                        className="mr-1 sm:mr-1.5 opacity-70 sm:w-3 sm:h-3"
-                        strokeWidth={2.5}
-                      />
-                      <span>{item.searchCount}</span>
-                      <X
-                        size={8}
-                        className="ml-0.5 opacity-50 sm:w-2.5 sm:h-2.5"
-                        strokeWidth={3}
-                      />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold shadow-[2px_2px_0_var(--shadow-color)]",
+                          getSearchCountColor(item.searchCount),
+                        )}
+                      >
+                        <Search size={12} />
+                        {item.searchCount}{" "}
+                        {item.searchCount === 1 ? "search" : "searches"}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground shadow-[2px_2px_0_var(--shadow-color)]"
+                        title="Last Updated"
+                      >
+                        <Calendar size={12} className="opacity-70" />
+                        {updatedLabel}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="ml-3 w-px h-8 bg-zinc-200 dark:bg-zinc-800 hidden sm:block opacity-50"></div>
-
+                <div className="relative z-10 flex items-center gap-2">
                   <button
                     onClick={(e) => handleDeleteClick(e, item.character)}
-                    className="p-3 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:text-red-600 active:bg-red-100 dark:active:bg-red-500/20 rounded-full transition-all duration-200 shrink-0 cursor-pointer pointer-events-auto z-20"
-                    title="Delete Word"
+                    className="group/btn z-20 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-border bg-danger p-2.5 font-bold text-white shadow-shadow transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                    title="Delete"
                   >
-                    <Trash2 size={18} />
+                    <Trash2
+                      size={15}
+                      className="transition-transform group-hover/btn:scale-110"
+                    />
                   </button>
                 </div>
               </div>

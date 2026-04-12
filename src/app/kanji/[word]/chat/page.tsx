@@ -44,7 +44,7 @@ export default function ChatPage({ params }: Props) {
     if (!hasStartedRef.current && messages.length === 0) {
       hasStartedRef.current = true;
       sendMessage({
-        text: `I'm learning the kanji "${decodedWord}". Please provide some example sentences using this kanji, and for each sentence, include its meaning and reading.`,
+        text: `I'm learning the word/kanji "${decodedWord}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`,
       });
     }
   }, [decodedWord, messages.length, sendMessage]);
@@ -72,10 +72,10 @@ export default function ChatPage({ params }: Props) {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative">
-      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl shadow-sm jp-bg">
+    <div className="flex flex-col min-h-dvh bg-bg font-sans relative">
+      <main className="flex flex-col flex-1 w-full max-w-md mx-auto lg:max-w-xl jp-bg">
         {/* Header Navigation */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center justify-between p-4 border-b-2 border-border bg-secondary sticky top-0 z-20">
           <Link
             href={`/kanji/${encodeURIComponent(decodedWord)}`}
             className={cn(
@@ -98,7 +98,7 @@ export default function ChatPage({ params }: Props) {
         </div>
 
         {/* Warning Banner */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-500 p-3 mx-4 mt-4 rounded-xl flex gap-3 text-sm border border-amber-200/50 dark:border-amber-800/50 items-start shadow-sm shrink-0">
+        <div className="bg-main text-main-foreground p-3 mx-4 mt-4 rounded-base flex gap-3 text-sm border-2 border-border items-start shadow-[4px_4px_0_var(--border)] font-bold shrink-0">
           <AlertTriangle size={18} className="shrink-0 mt-0.5" />
           <p className="leading-snug">
             <strong>Warning:</strong> Please do not send any important,
@@ -117,10 +117,10 @@ export default function ChatPage({ params }: Props) {
             >
               <div
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1 overflow-hidden",
+                  "w-10 h-10 rounded-base flex items-center justify-center shrink-0 mt-1 overflow-hidden border-2 border-border shadow-[2px_2px_0_var(--border)]",
                   m.role === "user"
-                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                    : "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50",
+                    ? "bg-secondary text-foreground"
+                    : "bg-main text-main-foreground",
                 )}
               >
                 {m.role === "user" ? (
@@ -138,10 +138,10 @@ export default function ChatPage({ params }: Props) {
 
               <div
                 className={cn(
-                  "px-4 py-3 rounded-2xl text-[15px] leading-relaxed",
+                  "px-4 py-3 rounded-base text-[15px] leading-relaxed border-2 border-border shadow-[4px_4px_0_var(--border)]",
                   m.role === "user"
-                    ? "bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 rounded-tr-sm"
-                    : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-tl-sm text-zinc-800 dark:text-zinc-100 wrap-break-word whitespace-pre-wrap",
+                    ? "bg-foreground text-background"
+                    : "bg-blank text-foreground wrap-break-word whitespace-pre-wrap",
                 )}
               >
                 {m.role === "user" ? (
@@ -157,7 +157,7 @@ export default function ChatPage({ params }: Props) {
             messages.length > 0 &&
             messages[messages.length - 1].role === "user" && (
               <div className="flex gap-3 max-w-[85%]">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 overflow-hidden">
+                <div className="w-10 h-10 rounded-base flex items-center justify-center shrink-0 mt-1 bg-main text-main-foreground border-2 border-border shadow-[2px_2px_0_var(--border)] overflow-hidden">
                   <Image
                     src="/animations/bird-speak.gif"
                     alt="Koijo"
@@ -166,7 +166,7 @@ export default function ChatPage({ params }: Props) {
                     className="w-14 h-14 object-contain pointer-events-none"
                   />
                 </div>
-                <div className="px-5 py-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-tl-sm flex items-center gap-1.5 h-12.5">
+                <div className="px-5 py-4 rounded-base bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] flex items-center gap-1.5 h-12.5">
                   <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                   <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce"></div>
@@ -178,12 +178,12 @@ export default function ChatPage({ params }: Props) {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 sticky bottom-0 z-20">
+        <div className="p-4 bg-secondary border-t-2 border-border sticky bottom-0 z-20 font-bold">
           <form
             onSubmit={handleSubmit}
             className="relative flex items-end gap-2"
           >
-            <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 focus-within:ring-2 focus-within:ring-zinc-300 dark:focus-within:ring-zinc-700 transition-shadow">
+            <div className="relative flex-1 bg-blank rounded-base border-2 border-border shadow-shadow focus-within:ring-4 focus-within:ring-main focus-within:translate-x-boxShadowX focus-within:translate-y-boxShadowY focus-within:shadow-none transition-all">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -198,7 +198,7 @@ export default function ChatPage({ params }: Props) {
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="p-3.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-200 dark:hover:bg-white text-white dark:text-zinc-900 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              className="p-3.5 bg-danger text-white border-2 border-border shadow-shadow rounded-base transition-all active:translate-x-boxShadowX active:translate-y-boxShadowY active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               title="Send message"
               aria-label="Send message"
             >
