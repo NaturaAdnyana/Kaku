@@ -127,8 +127,10 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   });
 
   const kanjiItems = useMemo(() => {
-    return data?.pages.flatMap((page) => page.data || []) ?? [];
+    type BaseItem = { id: string; userId: string; character: string; searchCount: number; createdAt: Date; updatedAt: Date };
+    return data?.pages.flatMap((page) => (page.data || []) as BaseItem[]) ?? [];
   }, [data]);
+
 
   const total = data?.pages[0]?.totalCount ?? 0;
   const collectionLabel = type === "kanji" ? "Saved Kanji" : "Saved Words";

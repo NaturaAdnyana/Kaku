@@ -39,7 +39,7 @@ export default function Home() {
               <Link
                 href="/about"
                 className={cn(
-                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  buttonVariants({ variant: "neutral", size: "icon" }),
                   "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer",
                 )}
               >
@@ -76,7 +76,7 @@ export default function Home() {
               <Link
                 href="/about"
                 className={cn(
-                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  buttonVariants({ variant: "neutral", size: "icon" }),
                   "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200",
                 )}
               >

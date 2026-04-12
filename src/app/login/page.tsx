@@ -24,7 +24,7 @@ export default function LoginPage() {
       {/* Theme Switcher - Floating */}
       <div className="absolute top-6 right-6 z-50">
         <Button
-          variant="outline"
+          variant="neutral"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="rounded-2xl w-12 h-12 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md border-zinc-200 dark:border-zinc-800 shadow-xl transition-all active:scale-90"
@@ -43,7 +43,7 @@ export default function LoginPage() {
               KAKU!
               <Link 
                 href="/about"
-                className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer")}
+                className={cn(buttonVariants({ variant: "neutral", size: "icon" }), "rounded-full w-8 h-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer")}
               >
                 <Info className="w-5 h-5" />
               </Link>

@@ -45,7 +45,7 @@ export default function AboutPage() {
         <Link
           href="/"
           className={cn(
-            buttonVariants({ variant: "ghost" }),
+            buttonVariants({ variant: "neutral" }),
             "mb-4 gap-2 cursor-pointer",
           )}
         >
@@ -58,7 +58,7 @@ export default function AboutPage() {
           <h1 className="text-4xl font-extrabold tracking-tight">{t.title}</h1>
           <div className="flex gap-2">
             <Button
-              variant={lang === "id" ? "default" : "outline"}
+              variant={lang === "id" ? "default" : "neutral"}
               size="sm"
               onClick={() => setLang("id")}
               className="rounded-full cursor-pointer"
@@ -66,7 +66,7 @@ export default function AboutPage() {
               Indo
             </Button>
             <Button
-              variant={lang === "en" ? "default" : "outline"}
+              variant={lang === "en" ? "default" : "neutral"}
               size="sm"
               onClick={() => setLang("en")}
               className="rounded-full cursor-pointer"
@@ -74,7 +74,7 @@ export default function AboutPage() {
               EN
             </Button>
             <Button
-              variant={lang === "ja" ? "default" : "outline"}
+              variant={lang === "ja" ? "default" : "neutral"}
               size="sm"
               onClick={() => setLang("ja")}
               className="rounded-full cursor-pointer"
@@ -153,7 +153,7 @@ export default function AboutPage() {
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              buttonVariants({ variant: "outline" }),
+              buttonVariants({ variant: "neutral" }),
               "gap-2 rounded-xl cursor-pointer",
             )}
           >

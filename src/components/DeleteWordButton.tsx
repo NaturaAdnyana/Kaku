@@ -54,23 +54,22 @@ export function DeleteWordButton({ word }: { word: string }) {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
-        render={
+      <AlertDialogTrigger asChild>
           <Button
-            variant="ghost"
+            variant="neutral"
             size="icon"
             disabled={loading}
             className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
             title="Delete Word"
-          />
-        }
-      >
-        {loading ? (
-          <Loader2 className="animate-spin" size={24} />
-        ) : (
-          <Trash2 size={24} />
-        )}
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={24} />
+            ) : (
+              <Trash2 size={24} />
+            )}
+          </Button>
       </AlertDialogTrigger>
+
 
       <AlertDialogContent>
         <AlertDialogHeader>

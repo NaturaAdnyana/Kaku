@@ -1,4 +1,4 @@
-import { buttonVariants } from "@/components/ui/button-variants";
+import { buttonVariants } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { DeleteWordButton } from "@/components/DeleteWordButton";
@@ -62,7 +62,7 @@ export default async function KanjiDetailPage({ params }: Props) {
           <Link
             href="/list"
             className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
+              buttonVariants({ variant: "neutral", size: "icon" }),
               "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer",
             )}
           >

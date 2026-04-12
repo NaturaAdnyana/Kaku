@@ -79,7 +79,7 @@ export default function ChatPage({ params }: Props) {
           <Link
             href={`/kanji/${encodeURIComponent(decodedWord)}`}
             className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
+              buttonVariants({ variant: "neutral", size: "icon" }),
               "mr-2 text-zinc-600 dark:text-zinc-400 cursor-pointer",
             )}
             aria-label="Back to word details"
