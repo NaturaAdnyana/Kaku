@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Undo, Trash2, Loader2, Search, X, PenLine } from "lucide-react";
-import { saveKanji } from "@/app/actions/kanji";
+import { saveWord } from "@/app/actions/kanji";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
 import { useTheme } from "next-themes";
 import { useSearchAnimation } from "./SearchAnimationProvider";
@@ -248,9 +248,10 @@ export function HandwritingCanvas() {
 
     setIsSaving(true);
     try {
-      const response = await saveKanji(composedWord);
+      const response = await saveWord(composedWord);
       if ("success" in response && response.success) {
         queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
+        queryClient.invalidateQueries({ queryKey: ["word-list"] });
         const result = response as { searchCount: number };
         triggerSearchAnimation(
           result.searchCount || 1,

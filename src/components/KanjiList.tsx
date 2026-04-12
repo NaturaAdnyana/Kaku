@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { getKanjiList, deleteKanji } from "@/app/actions/kanji";
+import { getKanjiList, getWordList, deleteKanji, deleteWord } from "@/app/actions/kanji";
 import { Loader2, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -70,7 +70,7 @@ export function KanjiSkeleton() {
   );
 }
 
-export function KanjiList() {
+export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch] = useDebounce(searchTerm, 500);
@@ -90,9 +90,10 @@ export function KanjiList() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ["kanji-list", debouncedSearch, sortBy],
+    queryKey: [`${type}-list`, debouncedSearch, sortBy],
     queryFn: async ({ pageParam = 1 }) => {
-      const res = await getKanjiList(
+      const getListFn = type === "kanji" ? getKanjiList : getWordList;
+      const res = await getListFn(
         pageParam as number,
         20,
         debouncedSearch,
@@ -110,10 +111,10 @@ export function KanjiList() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteKanji,
+    mutationFn: type === "kanji" ? deleteKanji : deleteWord,
     onSuccess: (_, character) => {
       toast.success(`Deleted "${character}" successfully`);
-      queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
+      queryClient.invalidateQueries({ queryKey: [`${type}-list`] });
     },
     onError: () => {
       toast.error("Failed to delete word.");
@@ -231,7 +232,7 @@ export function KanjiList() {
           <p>Failed to load Kanji.</p>
           <button
             onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["kanji-list"] })
+              queryClient.invalidateQueries({ queryKey: [`${type}-list`] })
             }
             className="text-sm underline mt-2 text-zinc-500"
           >

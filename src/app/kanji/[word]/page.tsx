@@ -41,6 +41,19 @@ export default async function KanjiDetailPage({ params }: Props) {
     console.error("Jisho API Error", e);
   }
 
+  // 3. Fetch Kanji API for Single Kanji
+  let kanjiApiEntry = null;
+  if (isSingleKanji) {
+    try {
+      const res = await fetch(`https://kanjiapi.dev/v1/kanji/${encodeURIComponent(decodedWord)}`, { cache: "force-cache" });
+      if (res.ok) {
+        kanjiApiEntry = await res.json();
+      }
+    } catch (e) {
+      console.error("Kanji API Error", e);
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative overflow-hidden pb-24">
       <main className="flex-1 w-full max-w-md p-4 mx-auto sm:p-6 lg:max-w-lg">
@@ -69,8 +82,10 @@ export default async function KanjiDetailPage({ params }: Props) {
           />
 
           {isSingleKanji ? (
-            <Tabs defaultValue="meaning" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl h-auto">
+            <>
+              <KanjiDetailsDisplay kanjiData={kanjiApiEntry} />
+              <Tabs defaultValue="meaning" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl h-auto">
                 <TabsTrigger
                   value="meaning"
                   className="rounded-xl data-active:bg-white dark:data-active:bg-zinc-900 data-active:shadow-sm py-3 text-sm font-bold transition-all"
@@ -85,7 +100,17 @@ export default async function KanjiDetailPage({ params }: Props) {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="meaning" className="mt-0">
-                <MeaningContent apiEntry={apiEntry} showTitle={false} />
+                {kanjiApiEntry && kanjiApiEntry.meanings?.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-col gap-2">
+                      <p className="text-lg font-medium text-zinc-800 dark:text-zinc-100 leading-snug wrap-break-word capitalize">
+                        {kanjiApiEntry.meanings.join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <MeaningContent apiEntry={apiEntry} showTitle={false} />
+                )}
               </TabsContent>
               <TabsContent value="words" className="mt-0">
                 <div className="flex flex-col gap-3">
@@ -121,6 +146,7 @@ export default async function KanjiDetailPage({ params }: Props) {
                 </div>
               </TabsContent>
             </Tabs>
+            </>
           ) : (
             <MeaningContent apiEntry={apiEntry} />
           )}
@@ -174,6 +200,66 @@ function MeaningContent({
           </p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function KanjiDetailsDisplay({ kanjiData }: { kanjiData: Record<string, unknown> | null }) {
+  if (!kanjiData) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const kd = kanjiData as Record<string, any>;
+  
+  return (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="grid grid-cols-3 gap-4">
+        {kd.jlpt !== null && (
+          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">JLPT</span>
+            <span className="font-bold text-lg">N{kd.jlpt}</span>
+          </div>
+        )}
+        {kd.grade !== null && (
+          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">Grade</span>
+            <span className="font-bold text-lg">{kd.grade}</span>
+          </div>
+        )}
+        {kd.stroke_count !== null && (
+          <div className="flex flex-col gap-1 items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+            <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-wider">Strokes</span>
+            <span className="font-bold text-lg">{kd.stroke_count}</span>
+          </div>
+        )}
+      </div>
+
+      {(kd.kun_readings?.length > 0 || kd.on_readings?.length > 0) && (
+        <div className="flex flex-col gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          {kd.kun_readings?.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500">Kun</span>
+              <div className="flex flex-wrap gap-2">
+                {kd.kun_readings.map((r: string, i: number) => (
+                  <span key={i} className="text-sm font-medium px-2.5 py-1 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-300 border border-orange-200/50 dark:border-orange-900/50 shadow-sm rounded-lg">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {kanjiData.on_readings?.length > 0 && (
+            <div className="flex flex-col gap-1.5 pt-1">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-500">On</span>
+              <div className="flex flex-wrap gap-2">
+                {kanjiData.on_readings.map((r: string, i: number) => (
+                  <span key={i} className="text-sm font-medium px-2.5 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50 shadow-sm rounded-lg">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

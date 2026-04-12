@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteKanji, getKanjiByWord } from "@/app/actions/kanji";
+import { deleteWord, getKanjiByWord } from "@/app/actions/kanji";
 import { Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export function DeleteWordButton({ word }: { word: string }) {
 
   const handleDelete = async () => {
     setLoading(true);
-    const res = await deleteKanji(word);
+    const res = await deleteWord(word);
 
     if (res?.success) {
       toast.success(`Deleted "${word}" successfully`);
