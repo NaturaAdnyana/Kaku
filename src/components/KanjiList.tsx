@@ -127,10 +127,16 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   });
 
   const kanjiItems = useMemo(() => {
-    type BaseItem = { id: string; userId: string; character: string; searchCount: number; createdAt: Date; updatedAt: Date };
+    type BaseItem = {
+      id: string;
+      userId: string;
+      character: string;
+      searchCount: number;
+      createdAt: Date;
+      updatedAt: Date;
+    };
     return data?.pages.flatMap((page) => (page.data || []) as BaseItem[]) ?? [];
   }, [data]);
-
 
   const total = data?.pages[0]?.totalCount ?? 0;
   const collectionLabel = type === "kanji" ? "Saved Kanji" : "Saved Words";
@@ -189,13 +195,11 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="inline-flex items-center border-2 border-border bg-main px-3 py-1 text-sm font-bold text-main-foreground shadow-shadow rounded-base">
-                {total} {total === 1 ? "item" : "items"}
-              </span>
-              <span className="truncate text-sm font-bold text-foreground">
-                {debouncedSearch
-                  ? `Results for "${debouncedSearch}"`
-                  : collectionLabel}
+              <span className="inline-flex shrink-0 items-center gap-1.5 border-2 border-border bg-main px-3 py-1 text-sm font-bold tabular-nums text-main-foreground shadow-shadow rounded-base">
+                <span>{total}</span>
+                <span className="font-normal opacity-80">
+                  {debouncedSearch ? `results` : collectionLabel}
+                </span>
               </span>
             </div>
 
@@ -225,14 +229,8 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent
-                align="end"
-                className="min-w-44 rounded-base p-1.5"
-              >
-                <SelectItem
-                  value="newest"
-                  className="rounded-base"
-                >
+              <SelectContent align="end" className="min-w-44 rounded-base p-1">
+                <SelectItem value="newest" className="rounded-base mb-1.5">
                   <div className="flex items-center gap-2 py-0.5">
                     <Calendar
                       size={14}
@@ -241,10 +239,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
                     <span>Newest First</span>
                   </div>
                 </SelectItem>
-                <SelectItem
-                  value="most-searched"
-                  className="rounded-base"
-                >
+                <SelectItem value="most-searched" className="rounded-base">
                   <div className="flex items-center gap-2 py-0.5">
                     <ArrowDownAZ
                       size={14}
@@ -323,7 +318,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold shadow-[2px_2px_0_var(--shadow-color)]",
+                          "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
                           getSearchCountColor(item.searchCount),
                         )}
                       >
@@ -332,7 +327,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
                         {item.searchCount === 1 ? "search" : "searches"}
                       </span>
                       <span
-                        className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground shadow-[2px_2px_0_var(--shadow-color)]"
+                        className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
                         title="Last Updated"
                       >
                         <Calendar size={12} className="opacity-70" />
