@@ -87,19 +87,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // Keep this on OpenRouter's free tier, while explicitly disabling reasoning output.
     const result = streamText({
-      model: openrouter("openrouter/free"),
+      model: openrouter("openrouter/free", {
+        reasoning: {
+          effort: "none",
+          exclude: true,
+        },
+      }),
       system: SYSTEM_PROMPT,
       messages: coreMessages,
+      maxRetries: 0, // Fail fast — no point retrying a rate limit
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      sendReasoning: false,
+    });
   } catch (error) {
-    console.error("Chat API Error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    const isRateLimit =
+      message.includes("rate limit") || message.includes("429");
+
+    console.error("Chat API Error:", message);
+
+    // Return a 429 so the client can detect it specifically
     return new Response(
-      JSON.stringify({ error: "Failed to process chat request" }),
+      JSON.stringify({
+        error: isRateLimit ? "rate_limit" : "server_error",
+        message: isRateLimit
+          ? "Rate limit reached. Please wait a moment before sending another message."
+          : "Something went wrong. Please try again.",
+      }),
       {
-        status: 500,
+        status: isRateLimit ? 429 : 500,
         headers: { "Content-Type": "application/json" },
       },
     );
