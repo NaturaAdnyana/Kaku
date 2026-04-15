@@ -30,6 +30,7 @@ interface SearchAnimationProps {
 
 export function SearchAnimation({ savePromise, word = "this", onComplete }: SearchAnimationProps) {
   const [searchCount, setSearchCount] = useState<number | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -69,16 +70,23 @@ export function SearchAnimation({ savePromise, word = "this", onComplete }: Sear
   const { animationData } = useLottieAnimation(level ? `level${level}.json` : "");
 
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), 3500); // Keep toast up for 3.5s
-    return () => clearTimeout(timer);
+    const totalTime = 6000; // Keep toast up for 6s total
+    const leaveTimer = setTimeout(() => setIsLeaving(true), totalTime - 300); // Trigger exit animation 300ms before unmount
+    const completeTimer = setTimeout(() => onComplete?.(), totalTime);
+    
+    return () => {
+      clearTimeout(leaveTimer);
+      clearTimeout(completeTimer);
+    };
   }, [onComplete]);
 
   return (
-    <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] animate-in slide-in-from-right-8 slide-in-from-bottom-4 fade-in duration-300">
+    <div className={cn(
+      "fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
+      isLeaving ? "animate-out slide-out-to-right-12 fade-out" : "animate-in slide-in-from-right-8 slide-in-from-bottom-4 fade-in"
+    )}>
       <div className="w-14 h-14 shrink-0 bg-secondary border-2 border-border rounded-base overflow-hidden flex items-center justify-center relative">
-        {level === 4 ? (
-          <img src="/animations/fire.gif" alt="Fire!" className="w-14 h-14 object-cover" />
-        ) : (level !== null && animationData) ? (
+        {(level !== null && animationData) ? (
           <div className="scale-[1.5]">
             <LottiePlayer animationData={animationData} loop={true} />
           </div>
@@ -89,9 +97,12 @@ export function SearchAnimation({ savePromise, word = "this", onComplete }: Sear
 
       <div className="flex flex-col flex-1 min-w-0 pr-4">
         {searchCount !== null ? (
-          <span className="text-[10px] uppercase font-bold tracking-wider text-main">
-            Search Hit #{searchCount}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-main">
+              Search Hit #{searchCount}
+            </span>
+            {level === 4 && <img src="/animations/fire.gif" alt="Fire!" className="w-3.5 h-3.5 object-contain" />}
+          </div>
         ) : (
           <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground animate-pulse">
             Checking Library...
@@ -103,7 +114,10 @@ export function SearchAnimation({ savePromise, word = "this", onComplete }: Sear
       </div>
 
       <button
-        onClick={() => onComplete?.()}
+        onClick={() => {
+          setIsLeaving(true);
+          setTimeout(() => onComplete?.(), 300);
+        }}
         className="absolute top-2 right-2 text-muted-foreground hover:text-foreground hover:scale-110 transition-transform cursor-pointer"
         aria-label="Close"
       >
@@ -111,7 +125,10 @@ export function SearchAnimation({ savePromise, word = "this", onComplete }: Sear
       </button>
 
       {/* Progress Bar under toast */}
-      <div className="absolute bottom-0 left-0 h-1 bg-main flex origin-left animate-toast-progress" style={{ width: '100%', animationDuration: '3.5s', animationTimingFunction: 'linear' }} />
+      <div className={cn(
+        "absolute bottom-0 left-0 h-1 bg-main flex origin-left animate-toast-progress",
+        isLeaving && "opacity-0 transition-opacity"
+      )} style={{ width: '100%', animationDuration: '6s', animationTimingFunction: 'linear' }} />
     </div>
   );
 }
