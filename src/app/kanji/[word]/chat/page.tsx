@@ -102,7 +102,6 @@ function StreamingBubble({ text }: { text: string }) {
       <Bubble isUser={false}>
         <p className="text-[15px] leading-relaxed whitespace-pre-wrap wrap-break-word">
           {text}
-          <span className="inline-block w-[2px] h-[1em] bg-current ml-0.5 align-middle animate-[blink_0.8s_step-end_infinite]" />
         </p>
       </Bubble>
     </div>
@@ -141,7 +140,7 @@ export default function ChatPage({ params }: Props) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
 
-  const { messages, sendMessage, status, error: chatError, reload } = useChat({
+  const { messages, sendMessage, status, error: chatError } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
@@ -152,11 +151,7 @@ export default function ChatPage({ params }: Props) {
   const lastMsg = messages[messages.length - 1];
   const renderableMessages = messages
     .map(toRenderableMessage)
-    .filter(
-      (
-        message,
-      ): message is { id: string; role: string; text: string } => message !== null,
-    );
+    .filter((message): message is NonNullable<ReturnType<typeof toRenderableMessage>> => message !== null);
 
   // Only the live streaming text re-renders on every token
   const streamingText =
@@ -276,15 +271,6 @@ export default function ChatPage({ params }: Props) {
                 <AlertTriangle size={16} />
                 {errorMessage}
               </div>
-              <button
-                onClick={() => reload()}
-                className={cn(
-                  buttonVariants({ variant: "neutral", size: "sm" }),
-                  "font-bold border-2"
-                )}
-              >
-                Try Again
-              </button>
             </div>
           )}
 
@@ -294,7 +280,7 @@ export default function ChatPage({ params }: Props) {
         {/* ── Input ── */}
         <div className="p-3 bg-secondary border-t-2 border-border shrink-0">
           <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <div className="relative flex-1 bg-blank rounded-base border-2 border-border shadow-shadow focus-within:ring-4 focus-within:ring-main focus-within:translate-x-boxShadowX focus-within:translate-y-boxShadowY focus-within:shadow-none transition-all">
+            <div className="relative flex-1 bg-blank rounded-base border-2 border-border shadow-shadow focus-within:ring-4 focus-within:ring-main focus-within:translate-x-boxShadowX focus-within:translate-y-boxShadowY focus-within:shadow-none transition-all min-h-[52px] flex items-center">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -312,10 +298,10 @@ export default function ChatPage({ params }: Props) {
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="p-3.5 bg-main text-main-foreground border-2 border-border shadow-shadow rounded-base transition-all active:translate-x-boxShadowX active:translate-y-boxShadowY active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="h-[52px] w-[52px] flex items-center justify-center bg-main text-main-foreground border-2 border-border shadow-shadow rounded-base transition-all active:translate-x-boxShadowX active:translate-y-boxShadowY active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               title="Send"
             >
-              <Send size={17} />
+              <Send size={18} />
             </button>
           </form>
           <p className="text-center mt-3 text-[10px] text-muted-foreground tracking-wide">
