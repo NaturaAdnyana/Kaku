@@ -97,3 +97,16 @@ export const userWord = pgTable("userWord", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
+
+export const wordKanji = pgTable("wordKanji", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  wordId: text("wordId")
+    .notNull()
+    .references(() => word.id, { onDelete: "cascade" }),
+  kanjiId: text("kanjiId")
+    .notNull()
+    .references(() => kanji.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});

@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { kanji, userKanji, word, userWord } from "@/lib/schema";
+import { kanji, userKanji, word, userWord, wordKanji } from "@/lib/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 export async function saveWord(text: string) {
   try {
@@ -85,21 +86,35 @@ export async function saveWord(text: string) {
         await db.insert(userWord).values({ userId, wordId: targetId, searchCount: 1 });
       }
 
-      // Also split the word and save individual kanjis
+      // Also split the word and save individual kanjis to populate wordKanji relation
       const chars = Array.from(text).filter(c => c.trim().length > 0);
       for (const char of chars) {
         // Simple heuristic to weed out non-kanji characters (approximate)
         if (char.match(/[\u4e00-\u9faf\u3400-\u4dbf]/)) {
-           await saveWord(char);
+           const kResult = await saveWord(char);
+           if (kResult.success && kResult.targetId && targetId) {
+             const existingLink = await db
+               .select()
+               .from(wordKanji)
+               .where(and(eq(wordKanji.wordId, targetId), eq(wordKanji.kanjiId, kResult.targetId)))
+               .limit(1);
+               
+             if (existingLink.length === 0) {
+               await db.insert(wordKanji).values({ wordId: targetId, kanjiId: kResult.targetId });
+             }
+           }
         }
       }
     }
+
+    revalidatePath("/", "layout");
 
     return {
       success: true,
       message: "Saved",
       isNew: isNewRecord,
       searchCount: searchCount,
+      targetId: targetId,
     };
   } catch (error) {
     console.error("Error saving word:", error);
@@ -336,9 +351,72 @@ export async function deleteWord(text: string) {
       }
     }
 
+    revalidatePath("/", "layout");
+
     return { success: true };
   } catch (error) {
     console.error("Error deleting:", error);
     return { error: "Failed to delete" };
   }
 }
+
+export async function getWordsForKanji(kanjiCharacter: string) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const userId = session.user.id;
+
+    // 1. Find kanji ID
+    const k = await db.select().from(kanji).where(eq(kanji.character, kanjiCharacter)).limit(1);
+    if (!k.length) return { success: true, data: [] };
+
+    // 2. Find words linked to this kanji that THIS USER has saved
+    const query = await db
+      .select({
+        id: userWord.id,
+        word: word.word,
+        searchCount: userWord.searchCount,
+        updatedAt: userWord.updatedAt,
+      })
+      .from(wordKanji)
+      .innerJoin(word, eq(wordKanji.wordId, word.id))
+      .innerJoin(userWord, eq(word.id, userWord.wordId))
+      .where(and(eq(wordKanji.kanjiId, k[0].id), eq(userWord.userId, userId)))
+      .orderBy(desc(userWord.updatedAt));
+
+    return { success: true, data: query };
+  } catch (error) {
+    console.error("Error fetching words for kanji:", error);
+    return { success: false, error: "Failed to fetch words" };
+  }
+}
+
+export async function getJishoDefinition(word: string) {
+  try {
+    const res = await fetch(`https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(word)}`, {
+      cache: "force-cache"
+    });
+    if (res.ok) {
+        const data = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const found = data?.data?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (d: any) => d.slug === word || d.japanese?.some((j: any) => j.word === word)
+        ) || data?.data?.[0];
+        
+        return { success: true, data: found };
+    }
+    return { success: false, error: "Jisho API response not OK" };
+  } catch (error) {
+    console.error("Jisho proxy error:", error);
+    return { success: false, error: "Failed to proxy request" };
+  }
+}
+
+

@@ -243,66 +243,69 @@ export function HandwritingCanvas() {
     handleClearCanvas();
   };
 
-  const handleSearchAndSave = async () => {
-    if (!composedWord.trim()) return;
+  const handleSearchAndSave = () => {
+    if (!composedWord.trim() || isSaving) return;
 
     setIsSaving(true);
-    try {
-      const response = await saveWord(composedWord);
+    
+    // 1. Kick off DB save in BACKGROUND (do not await)
+    const savePromise = saveWord(composedWord).then((response) => {
       if ("success" in response && response.success) {
         queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
         queryClient.invalidateQueries({ queryKey: ["word-list"] });
-        const result = response as { searchCount: number };
-        triggerSearchAnimation(
-          result.searchCount || 1,
-          `/kanji/${composedWord}`,
-        );
-        setComposedWord("");
-        handleClearCanvas();
       }
-    } catch (error) {
-      console.error("Failed to save word:", error);
-    } finally {
+      return response;
+    }).finally(() => {
       setIsSaving(false);
-    }
+    });
+
+    // 2. Trigger UI transition IMMEDIATELY
+    triggerSearchAnimation(`/kanji/${composedWord}`, savePromise, composedWord);
+    
+    setComposedWord("");
+    handleClearCanvas();
   };
 
   return (
     <div className="flex flex-col items-center w-full max-w-sm mx-auto space-y-4">
       {/* Composed Word Input Area */}
-      <div className="flex w-full gap-3">
-        <div className="relative flex-1 group">
+      <div className="flex w-full bg-blank border-2 border-border rounded-base shadow-[4px_4px_0_var(--border)] focus-within:ring-4 focus-within:ring-main focus-within:translate-x-[4px] focus-within:translate-y-[4px] focus-within:shadow-none transition-all group overflow-hidden">
+        <div className="relative flex-1 flex items-center">
           <PenLine
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors"
-            size={18}
+            className="absolute left-4 text-muted-foreground group-focus-within:text-main transition-colors"
+            size={20}
           />
           <input
             type="text"
             value={composedWord}
             onChange={(e) => setComposedWord(e.target.value)}
             placeholder="Write Kanji..."
-            className="w-full pl-11 pr-11 h-13 bg-blank rounded-base text-lg focus:ring-4 focus:ring-main focus:translate-x-boxShadowX focus:translate-y-boxShadowY focus:shadow-none transition-all outline-none border-2 border-border shadow-shadow"
+            className="w-full pl-12 pr-10 h-[56px] bg-transparent text-lg outline-none font-bold placeholder:font-medium placeholder:text-muted-foreground/50"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchAndSave();
+            }}
           />
           {composedWord && (
             <button
               onClick={() => setComposedWord("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+              className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
           )}
         </div>
-        <Button
+        <button
           onClick={handleSearchAndSave}
           disabled={!composedWord.trim() || isSaving}
-          className="px-6 h-13 cursor-pointer border-2"
+          className="px-6 h-[56px] bg-main text-main-foreground border-l-2 border-border flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-main/90"
+          aria-label="Search"
         >
           {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-6 h-6 animate-spin" />
           ) : (
-            <Search className="w-5 h-5" strokeWidth={2.5} />
+            <Search className="w-6 h-6" strokeWidth={3} />
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Canvas Area */}

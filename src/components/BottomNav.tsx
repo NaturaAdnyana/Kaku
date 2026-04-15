@@ -84,7 +84,7 @@ function NavItem({ isActive, label, icon, className }: NavItemProps) {
       {/* Hover glow — non-active only */}
       {!isActive && (
         <motion.span
-          className="absolute inset-0 rounded-base bg-secondary border-2 border-border shadow-[2px_2px_0_var(--border)]"
+          className="absolute inset-0 rounded-base bg-secondary"
           variants={hoverBgVariants}
         />
       )}

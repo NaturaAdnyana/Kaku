@@ -5,10 +5,20 @@ import { DefaultChatTransport, UIMessage, TextUIPart } from "ai";
 import { buttonVariants } from "@/components/ui/button";
 import { ChevronLeft, Send, AlertTriangle, User } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, use, useState, useCallback, memo, ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  use,
+  useState,
+  useCallback,
+  memo,
+  ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import Image from "next/image";
+import { motion } from "framer-motion";
+import { BackButton } from "@/components/BackButton";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -39,8 +49,8 @@ function Avatar({ isUser }: { isUser: boolean }) {
   return (
     <div
       className={cn(
-        "w-9 h-9 rounded-base flex items-center justify-center shrink-0 mt-1 overflow-hidden border-2 border-border",
-        isUser ? "bg-secondary text-foreground" : "bg-main text-main-foreground",
+        "w-9 h-9 rounded-base flex items-center justify-center shrink-0 mt-1 overflow-hidden border-2 border-border shadow-[2px_2px_0_var(--border)]",
+        isUser ? "bg-secondary text-foreground" : "bg-blank text-foreground",
       )}
     >
       {isUser ? (
@@ -59,12 +69,20 @@ function Avatar({ isUser }: { isUser: boolean }) {
   );
 }
 
-function Bubble({ isUser, children }: { isUser: boolean; children: ReactNode }) {
+function Bubble({
+  isUser,
+  children,
+}: {
+  isUser: boolean;
+  children: ReactNode;
+}) {
   return (
     <div
       className={cn(
         "px-4 py-3 rounded-base text-[15px] leading-relaxed border-2 border-border shadow-[4px_4px_0_var(--border)]",
-        isUser ? "bg-foreground text-background" : "bg-blank text-foreground",
+        isUser
+          ? "bg-green-900 dark:bg-primary text-background"
+          : "bg-blank text-foreground",
       )}
     >
       {children}
@@ -78,7 +96,15 @@ const FrozenMessage = memo(
   function FrozenMessage({ role, text }: { role: string; text: string }) {
     const isUser = role === "user";
     return (
-      <div className={cn("flex gap-3 max-w-[88%]", isUser ? "ml-auto flex-row-reverse" : "")}>
+      <motion.div
+        initial={isUser ? { opacity: 0, y: 10, scale: 0.95 } : false}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className={cn(
+          "flex gap-3 max-w-[88%]",
+          isUser ? "ml-auto flex-row-reverse" : "",
+        )}
+      >
         <Avatar isUser={isUser} />
         <Bubble isUser={isUser}>
           {isUser ? (
@@ -87,7 +113,7 @@ const FrozenMessage = memo(
             <MarkdownRenderer content={text} />
           )}
         </Bubble>
-      </div>
+      </motion.div>
     );
   },
   (prev, next) => prev.text === next.text && prev.role === next.role,
@@ -97,14 +123,18 @@ const FrozenMessage = memo(
 
 function StreamingBubble({ text }: { text: string }) {
   return (
-    <div className="flex gap-3 max-w-[88%]">
+    <motion.div
+      initial={false}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="flex gap-3 max-w-[88%]"
+    >
       <Avatar isUser={false} />
       <Bubble isUser={false}>
         <p className="text-[15px] leading-relaxed whitespace-pre-wrap wrap-break-word">
           {text}
         </p>
       </Bubble>
-    </div>
+    </motion.div>
   );
 }
 
@@ -112,7 +142,11 @@ function StreamingBubble({ text }: { text: string }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-3 max-w-[88%]">
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="flex gap-3 max-w-[88%]"
+    >
       <Avatar isUser={false} />
       <div className="px-5 py-4 rounded-base bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] flex items-center gap-1.5 h-12">
         {["-0.3s", "-0.15s", "0s"].map((delay) => (
@@ -123,7 +157,7 @@ function TypingIndicator() {
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -140,7 +174,12 @@ export default function ChatPage({ params }: Props) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
 
-  const { messages, sendMessage, status, error: chatError } = useChat({
+  const {
+    messages,
+    sendMessage,
+    status,
+    error: chatError,
+  } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
@@ -151,18 +190,30 @@ export default function ChatPage({ params }: Props) {
   const lastMsg = messages[messages.length - 1];
   const renderableMessages = messages
     .map(toRenderableMessage)
-    .filter((message): message is NonNullable<ReturnType<typeof toRenderableMessage>> => message !== null);
+    .filter(
+      (
+        message,
+      ): message is NonNullable<ReturnType<typeof toRenderableMessage>> =>
+        message !== null,
+    );
 
   // Only the live streaming text re-renders on every token
   const streamingText =
-    isStreaming && lastMsg?.role === "assistant" ? getText(lastMsg.parts) : null;
+    isStreaming && lastMsg?.role === "assistant"
+      ? getText(lastMsg.parts)
+      : null;
 
   const showTypingIndicator =
-    isSubmitted || (isStreaming && lastMsg?.role === "user");
+    isSubmitted ||
+    (isStreaming && lastMsg?.role === "user") ||
+    (isStreaming &&
+      lastMsg?.role === "assistant" &&
+      (!streamingText || streamingText.trim() === ""));
 
   // Handle specific error messages
   const errorMessage = chatError
-    ? chatError.message.includes("429") || chatError.message.includes("rate_limit")
+    ? chatError.message.includes("429") ||
+      chatError.message.includes("rate_limit")
       ? "Rate limit reached. Please wait a moment."
       : "Something went wrong. Please try again."
     : null;
@@ -175,7 +226,13 @@ export default function ChatPage({ params }: Props) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [renderableMessages, streamingText, showTypingIndicator, scrollToBottom, errorMessage]);
+  }, [
+    renderableMessages,
+    streamingText,
+    showTypingIndicator,
+    scrollToBottom,
+    errorMessage,
+  ]);
 
   // ── Auto-start ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -218,19 +275,9 @@ export default function ChatPage({ params }: Props) {
   return (
     <div className="flex flex-col h-dvh bg-bg font-sans">
       <main className="flex flex-col flex-1 min-h-0 w-full max-w-md mx-auto lg:max-w-xl jp-bg">
-
         {/* ── Header ── */}
         <div className="flex items-center justify-between p-4 border-b-2 border-border bg-secondary shrink-0">
-          <Link
-            href={`/kanji/${encodeURIComponent(decodedWord)}`}
-            className={cn(
-              buttonVariants({ variant: "neutral", size: "icon" }),
-              "shrink-0 cursor-pointer",
-            )}
-            aria-label="Back"
-          >
-            <ChevronLeft size={22} />
-          </Link>
+          <BackButton className="shrink-0" />
           <div className="flex flex-col items-center min-w-0 px-2">
             <h1 className="text-base font-bold truncate">Koijo — AI Sensei</h1>
             <span className="text-xs text-muted-foreground font-medium">
@@ -240,14 +287,11 @@ export default function ChatPage({ params }: Props) {
           <div className="w-10 shrink-0" />
         </div>
 
-        {/* ── Warning ── */}
-        <div className="bg-main text-main-foreground px-4 py-2.5 mx-4 mt-3 rounded-base flex gap-2.5 text-xs border-2 border-border items-center shadow-[3px_3px_0_var(--border)] font-bold shrink-0">
-          <AlertTriangle size={14} className="shrink-0" />
-          <p>Do not share personal or sensitive information with Koijo.</p>
-        </div>
-
         {/* ── Messages ── */}
-        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        <div
+          ref={scrollAreaRef}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-5"
+        >
           {renderableMessages.map((m) => {
             if (m.id === lastMsg?.id && m.role === "assistant" && isStreaming) {
               return null;
@@ -304,8 +348,13 @@ export default function ChatPage({ params }: Props) {
               <Send size={18} />
             </button>
           </form>
-          <p className="text-center mt-3 text-[10px] text-muted-foreground tracking-wide">
-            Enter to send · Shift+Enter for newline
+          <p className="text-center mt-3 text-[10px] text-muted-foreground tracking-wide flex justify-center items-center gap-1.5 flex-wrap">
+            <span>Enter to send · Shift+Enter for newline</span>
+            <span className="opacity-50 px-1 hidden sm:inline">|</span>
+            <span className="flex items-center gap-1 text-muted-foreground font-bold md:font-normal">
+              <AlertTriangle size={10} />
+              Do not share sensitive information.
+            </span>
           </p>
         </div>
       </main>

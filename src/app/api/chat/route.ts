@@ -1,8 +1,8 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText, UIMessage, TextUIPart } from "ai";
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 export const maxDuration = 30;
@@ -26,7 +26,7 @@ const SYSTEM_PROMPT = `You are Koijo, a small green bird created by Natura.
         - Explanations: Direct, factual, and minimal. Use bullet points.
 
         Style:
-        Short sentences. No fluff. Never break character.`;
+        Short sentences. No fluff. Never break character. DO NOT output any <think> tags or reasoning. Reply immediately and directly.`;
 
 type ChatCoreMessage = {
   role: "user" | "assistant" | "system";
@@ -87,14 +87,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Keep this on OpenRouter's free tier, while explicitly disabling reasoning output.
     const result = streamText({
-      model: openrouter("openrouter/free", {
-        reasoning: {
-          effort: "none",
-          exclude: true,
-        },
-      }),
+      model: google("gemma-4-31b-it"),
       system: SYSTEM_PROMPT,
       messages: coreMessages,
       maxRetries: 0, // Fail fast — no point retrying a rate limit

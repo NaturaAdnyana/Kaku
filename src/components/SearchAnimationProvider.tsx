@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { SearchAnimation } from "./SearchAnimation";
 
 interface SearchAnimationContextType {
-  triggerSearchAnimation: (searchCount: number, targetUrl: string) => void;
+  triggerSearchAnimation: (targetUrl: string, savePromise?: Promise<any>, word?: string) => void;
 }
 
 const SearchAnimationContext = createContext<
@@ -27,30 +27,33 @@ export function SearchAnimationProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [searchCount, setSearchCount] = useState(0);
+  const [animationProps, setAnimationProps] = useState<{
+    visible: boolean;
+    promise?: Promise<any>;
+    word?: string;
+  }>({ visible: false });
   const router = useRouter();
 
   const triggerSearchAnimation = useCallback(
-    (count: number, targetUrl: string) => {
-      setSearchCount(count);
-      setIsVisible(true);
-      // Navigate immediately while animation is showing
+    (targetUrl: string, savePromise?: Promise<any>, word?: string) => {
+      setAnimationProps({ visible: true, promise: savePromise, word });
+      // Navigate immediately while animation overlay isolates the screen!
       router.push(targetUrl);
     },
     [router],
   );
 
   const handleComplete = useCallback(() => {
-    setIsVisible(false);
+    setAnimationProps({ visible: false });
   }, []);
 
   return (
     <SearchAnimationContext.Provider value={{ triggerSearchAnimation }}>
       {children}
-      {isVisible && (
+      {animationProps.visible && (
         <SearchAnimation
-          searchCount={searchCount}
+          savePromise={animationProps.promise}
+          word={animationProps.word}
           onComplete={handleComplete}
         />
       )}
