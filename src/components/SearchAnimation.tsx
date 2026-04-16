@@ -130,8 +130,8 @@ export function SearchAnimation({
       className={cn(
         "fixed top-4 left-1/2 -translate-x-1/2 md:top-6 z-[80] flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
         isLeaving
-          ? "animate-out slide-out-to-top-4 fade-out"
-          : "animate-in slide-in-from-top-4 fade-in",
+          ? "animate-out slide-out-to-right-12 fade-out"
+          : "animate-in slide-in-from-right-8 slide-in-from-top-4 fade-in",
       )}
     >
       <div className="w-14 h-14 shrink-0 bg-secondary border-2 border-border rounded-base overflow-hidden flex items-center justify-center relative">
@@ -145,34 +145,27 @@ export function SearchAnimation({
       </div>
 
       <div className="flex flex-col flex-1 min-w-0 pr-4">
-        {isReadyToClose ? (
-          <>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-main">
-                Search Hit #{searchCount}
-              </span>
-              {level === 4 && (
-                <img
-                  src="/animations/fire.gif"
-                  alt="Fire!"
-                  className="w-3.5 h-3.5 object-contain"
-                />
-              )}
-            </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-main">
+            Search Hit #{searchCount}
+          </span>
+          {level === 4 && (
+            <img
+              src="/animations/fire.gif"
+              alt="Fire!"
+              className="w-3.5 h-3.5 object-contain"
+            />
+          )}
+        </div>
 
-            <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
-              {message}
-            </p>
-          </>
-        ) : (
-          <>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground animate-pulse">
-              Analyzing...
-            </span>
-            <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
-              Checking your search history...
-            </p>
-          </>
+        <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
+          {message}
+        </p>
+
+        {!isReadyToClose && (
+          <span className="text-[10px] font-medium text-muted-foreground mt-1 animate-pulse">
+            Analyzing...
+          </span>
         )}
       </div>
 
@@ -200,20 +193,18 @@ export function SearchAnimation({
         </svg>
       </button>
 
-      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-secondary/70 border-t border-border/30 overflow-hidden rounded-b-base">
-        <div
-          className={cn(
-            "h-full bg-main origin-left",
-            isReadyToClose ? "animate-toast-progress" : "opacity-60",
-            isLeaving && "opacity-0 transition-opacity",
-          )}
-          style={{
-            width: "100%",
-            animationDuration: "6s",
-            animationTimingFunction: "linear",
-          }}
-        />
-      </div>
+      <div
+        className={cn(
+          "absolute bottom-0 left-0 h-1 bg-main flex origin-left",
+          isReadyToClose ? "animate-toast-progress" : "opacity-40",
+          isLeaving && "opacity-0 transition-opacity",
+        )}
+        style={{
+          width: "100%",
+          animationDuration: "6s",
+          animationTimingFunction: "linear",
+        }}
+      />
     </div>
   );
 }
