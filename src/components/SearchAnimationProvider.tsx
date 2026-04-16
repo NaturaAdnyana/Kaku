@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import React, { createContext, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -30,10 +30,8 @@ export function SearchAnimationProvider({
 
   const triggerSearchAnimation = useCallback(
     (targetUrl: string, savePromise?: Promise<any>, word?: string) => {
-      // Just navigate immediately without showing overlay
       router.push(targetUrl);
       
-      // Save still happens in background but doesn't block
       if (savePromise) {
         savePromise.catch(() => {
           console.error("Save failed");
