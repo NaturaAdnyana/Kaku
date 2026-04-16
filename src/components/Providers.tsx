@@ -2,7 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { SearchAnimationProvider } from "./SearchAnimationProvider";
+import { ToastProvider } from "./ToastProvider";
+import ToastContainer from "./ToastContainer";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -18,7 +19,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SearchAnimationProvider>{children}</SearchAnimationProvider>
+      <ToastProvider>
+        <ToastContainer />
+        {children}
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
