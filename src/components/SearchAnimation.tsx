@@ -193,20 +193,18 @@ export function SearchAnimation({
         </svg>
       </button>
 
-      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-secondary/70 border-t border-border/30 overflow-hidden rounded-b-base">
-        <div
-          className={cn(
-            "h-full bg-main origin-left",
-            isReadyToClose ? "animate-toast-progress" : "opacity-60",
-            isLeaving && "opacity-0 transition-opacity",
-          )}
-          style={{
-            width: "100%",
-            animationDuration: "6s",
-            animationTimingFunction: "linear",
-          }}
-        />
-      </div>
+      <div
+        className={cn(
+          "absolute bottom-0 left-0 h-1 bg-main flex origin-left",
+          isReadyToClose ? "animate-toast-progress" : "opacity-40",
+          isLeaving && "opacity-0 transition-opacity",
+        )}
+        style={{
+          width: "100%",
+          animationDuration: "6s",
+          animationTimingFunction: "linear",
+        }}
+      />
     </div>
   );
 }
