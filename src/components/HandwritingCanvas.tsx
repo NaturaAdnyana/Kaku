@@ -6,7 +6,7 @@ import { Undo, Trash2, Loader2, Search, X, PenLine } from "lucide-react";
 import { saveWord } from "@/app/actions/kanji";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
 import { useTheme } from "next-themes";
-import { useSearchAnimation } from "./SearchAnimationProvider";
+import { useToast } from "./ToastProvider";
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -34,7 +34,7 @@ export function HandwritingCanvas() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Animation state (handled by provider)
-  const { triggerSearchAnimation } = useSearchAnimation();
+  const { triggerSearchAnimation } = useToast();
 
   const redraw = useCallback(
     (currentTraces: Trace) => {
