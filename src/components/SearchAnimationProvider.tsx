@@ -1,8 +1,7 @@
-"use client";
+use client;
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { SearchAnimation } from "./SearchAnimation";
 
 interface SearchAnimationContextType {
   triggerSearchAnimation: (targetUrl: string, savePromise?: Promise<any>, word?: string) => void;
@@ -27,36 +26,26 @@ export function SearchAnimationProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [animationProps, setAnimationProps] = useState<{
-    visible: boolean;
-    promise?: Promise<any>;
-    word?: string;
-  }>({ visible: false });
   const router = useRouter();
 
   const triggerSearchAnimation = useCallback(
     (targetUrl: string, savePromise?: Promise<any>, word?: string) => {
-      setAnimationProps({ visible: true, promise: savePromise, word });
-      // Navigate immediately while animation overlay isolates the screen!
+      // Just navigate immediately without showing overlay
       router.push(targetUrl);
+      
+      // Save still happens in background but doesn't block
+      if (savePromise) {
+        savePromise.catch(() => {
+          console.error("Save failed");
+        });
+      }
     },
     [router],
   );
 
-  const handleComplete = useCallback(() => {
-    setAnimationProps({ visible: false });
-  }, []);
-
   return (
     <SearchAnimationContext.Provider value={{ triggerSearchAnimation }}>
       {children}
-      {animationProps.visible && (
-        <SearchAnimation
-          savePromise={animationProps.promise}
-          word={animationProps.word}
-          onComplete={handleComplete}
-        />
-      )}
     </SearchAnimationContext.Provider>
   );
 }
