@@ -128,7 +128,7 @@ export function SearchAnimation({
   return (
     <div
       className={cn(
-        "fixed top-20 right-4 md:top-8 md:right-8 z-[80] flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
+        "fixed top-4 left-1/2 -translate-x-1/2 md:top-6 z-[80] flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
         isLeaving
           ? "animate-out slide-out-to-right-12 fade-out"
           : "animate-in slide-in-from-right-8 slide-in-from-top-4 fade-in",
