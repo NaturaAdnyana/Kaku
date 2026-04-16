@@ -1,4 +1,4 @@
-use client;
+use client";
 
 import React, { createContext, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
