@@ -65,6 +65,10 @@ async function migrate() {
 
     for (const row of rows) {
       const { userId, character, searchCount, createdAt, updatedAt } = row;
+      const normalizedSearchCount =
+        typeof searchCount === "number"
+          ? searchCount
+          : parseInt(searchCount || "1", 10);
 
       // Ensure the character exists in the new 'kanji' table
       const kanjiRecord = await db
@@ -92,7 +96,7 @@ async function migrate() {
       await db.insert(userKanji).values({
         userId,
         kanjiId,
-        searchCount: parseInt(searchCount || "1", 10),
+        searchCount: normalizedSearchCount,
         createdAt: new Date(createdAt),
         updatedAt: new Date(updatedAt)
       });

@@ -53,8 +53,10 @@ function URLTabsInner({
 }
 
 export function URLTabs(props: URLTabsProps) {
+  const { defaultValue, ...restProps } = props;
+
   return (
-    <Suspense fallback={<Tabs defaultValue={props.defaultValue} {...props} />}>
+    <Suspense fallback={<Tabs defaultValue={defaultValue} {...restProps} />}>
       <URLTabsInner {...props} />
     </Suspense>
   );

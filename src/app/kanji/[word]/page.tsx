@@ -213,7 +213,7 @@ function MeaningContent({
           className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2"
         >
           {/* Part of Speech */}
-          {sense.parts_of_speech?.length > 0 && (
+          {sense.parts_of_speech && sense.parts_of_speech.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-1">
               {sense.parts_of_speech.map((pos: string, idx: number) => (
                 <span
@@ -272,9 +272,10 @@ function KanjiDetailsDisplay({
         )}
       </div>
 
-      {(kd.kun_readings?.length > 0 || kd.on_readings?.length > 0) && (
+      {((kd.kun_readings && kd.kun_readings.length > 0) ||
+        (kd.on_readings && kd.on_readings.length > 0)) && (
         <div className="flex flex-col gap-5 pt-4 border-t-2 border-border mt-1">
-          {kd.kun_readings?.length > 0 && (
+          {kd.kun_readings && kd.kun_readings.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-xs uppercase font-extrabold tracking-widest text-foreground">
                 Kun
@@ -291,7 +292,7 @@ function KanjiDetailsDisplay({
               </div>
             </div>
           )}
-          {kd.on_readings?.length > 0 && (
+          {kd.on_readings && kd.on_readings.length > 0 && (
             <div className="flex flex-col gap-2 pt-1">
               <span className="text-xs uppercase font-extrabold tracking-widest text-foreground">
                 On

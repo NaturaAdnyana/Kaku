@@ -124,7 +124,10 @@ export function SearchAnimation({
       () => setIsLeaving(true),
       RESULT_TOAST_DURATION - EXIT_ANIMATION_DURATION,
     );
-    const completeTimer = setTimeout(onComplete, RESULT_TOAST_DURATION);
+    const completeTimer = setTimeout(
+      () => onComplete?.(),
+      RESULT_TOAST_DURATION,
+    );
 
     return () => {
       clearTimeout(leaveTimer);
