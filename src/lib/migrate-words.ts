@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { kanji, userKanji, word, userWord } from "./schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import * as dotenv from "dotenv";
 dotenv.config();
 dotenv.config({ path: ".env.local" });

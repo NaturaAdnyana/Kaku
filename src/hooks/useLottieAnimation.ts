@@ -1,20 +1,11 @@
-/**
- * useLottieAnimation
- *
- * Fetches a Lottie animation JSON from /animations/<filename> with a
- * module-level in-memory cache so the same file is never downloaded more
- * than once per browser session, even across remounts.
- */
-
 import { useState, useEffect } from "react";
 
-// Module-level cache: path → parsed JSON (or in-flight Promise)
 const cache = new Map<string, object | Promise<object>>();
 
 async function fetchAnimation(path: string): Promise<object> {
   const hit = cache.get(path);
-  if (hit instanceof Promise) return hit;      // already in-flight
-  if (hit) return hit;                          // already resolved
+  if (hit instanceof Promise) return hit;
+  if (hit) return hit;
 
   const promise = fetch(path)
     .then((res) => {
@@ -22,11 +13,11 @@ async function fetchAnimation(path: string): Promise<object> {
       return res.json() as Promise<object>;
     })
     .then((data) => {
-      cache.set(path, data);   // replace promise with resolved value
+      cache.set(path, data);
       return data;
     })
     .catch((err) => {
-      cache.delete(path);      // allow retry on failure
+      cache.delete(path);
       throw err;
     });
 
@@ -40,50 +31,74 @@ interface UseLottieAnimationResult {
   error: Error | null;
 }
 
+interface LottieAnimationState {
+  path: string | null;
+  animationData: object | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+
 export function useLottieAnimation(filename: string | null): UseLottieAnimationResult {
-  const [animationData, setAnimationData] = useState<object | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [state, setState] = useState<LottieAnimationState>({
+    path: null,
+    animationData: null,
+    isLoading: false,
+    error: null,
+  });
+  const path = filename ? `/animations/${filename}` : null;
 
   useEffect(() => {
-    if (!filename) {
-      setAnimationData(null);
+    if (!path) {
       return;
     }
 
-    const path = `/animations/${filename}`;
     let cancelled = false;
 
-    // Check synchronous cache hit first (avoids a render cycle)
     const cached = cache.get(path);
-    if (cached && !(cached instanceof Promise)) {
-      setAnimationData(cached);
-      setIsLoading(false);
-      return;
-    }
+    const pendingAnimation =
+      cached && !(cached instanceof Promise)
+        ? Promise.resolve(cached)
+        : fetchAnimation(path);
 
-    setIsLoading(true);
-    setError(null);
-
-    fetchAnimation(path)
+    pendingAnimation
       .then((data) => {
         if (!cancelled) {
-          setAnimationData(data);
-          setIsLoading(false);
+          setState({
+            path,
+            animationData: data,
+            isLoading: false,
+            error: null,
+          });
         }
       })
       .catch((err) => {
         if (!cancelled) {
           console.error(`[useLottieAnimation] ${err.message}`);
-          setError(err instanceof Error ? err : new Error(String(err)));
-          setIsLoading(false);
+          setState({
+            path,
+            animationData: null,
+            isLoading: false,
+            error: err instanceof Error ? err : new Error(String(err)),
+          });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [filename]);
+  }, [path]);
 
-  return { animationData, isLoading, error };
+  if (!path) {
+    return { animationData: null, isLoading: false, error: null };
+  }
+
+  if (state.path !== path) {
+    return { animationData: null, isLoading: true, error: null };
+  }
+
+  return {
+    animationData: state.animationData,
+    isLoading: state.isLoading,
+    error: state.error,
+  };
 }

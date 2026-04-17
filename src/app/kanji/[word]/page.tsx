@@ -10,6 +10,7 @@ import { TabPendingContent } from "@/components/TabPendingContent";
 
 type JishoJapaneseEntry = {
   word?: string;
+  reading?: string;
 };
 
 type JishoSense = {

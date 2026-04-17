@@ -1,5 +1,3 @@
-import { Loader2 } from "lucide-react";
-
 export default function Loading() {
   return (
     <div className="flex flex-col min-h-dvh bg-zinc-50 dark:bg-black font-sans relative overflow-hidden pb-24">

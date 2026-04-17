@@ -4,6 +4,14 @@ import { db } from "./db";
 import { kanji, userKanji } from "./schema";
 import { sql } from "drizzle-orm";
 
+type LegacyKanjiRow = {
+  userId: string;
+  character: string;
+  searchCount: number | string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 /**
  * MIGRATION SCRIPT
  * 
@@ -46,7 +54,7 @@ async function migrate() {
     console.log("Fetching data from 'kanjiList'...");
     const result = await db.execute(sql`SELECT * FROM "kanjiList"`);
     // Neon HTTP driver returns rows in a 'rows' property
-    const rows = (result.rows || result) as any[];
+    const rows = (result.rows || result) as LegacyKanjiRow[];
     
     if (!rows || rows.length === 0) {
       console.log("No data found in 'kanjiList'. Migration skipped or already done.");
@@ -65,7 +73,7 @@ async function migrate() {
         .where(sql`character = ${character}`)
         .limit(1);
 
-      let kanjiId;
+      let kanjiId: string;
       if (kanjiRecord.length === 0) {
         const inserted = await db
           .insert(kanji)

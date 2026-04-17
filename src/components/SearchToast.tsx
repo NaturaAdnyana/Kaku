@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { LottiePlayer } from "@/components/LottieCanvas";
 import { useLottieAnimation } from "@/hooks/useLottieAnimation";
@@ -143,10 +144,13 @@ export function SearchToast({
           Search Hit #{searchCount}
         </span>
         {level === 4 && (
-          <img
+          <Image
             src="/animations/fire.gif"
             alt="Fire!"
+            width={14}
+            height={14}
             className="h-3.5 w-3.5 object-contain"
+            unoptimized
           />
         )}
       </div>

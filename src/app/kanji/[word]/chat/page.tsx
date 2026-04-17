@@ -2,9 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage, TextUIPart } from "ai";
-import { buttonVariants } from "@/components/ui/button";
-import { ChevronLeft, Send, AlertTriangle, User } from "lucide-react";
-import Link from "next/link";
+import { Send, AlertTriangle, User } from "lucide-react";
 import {
   useEffect,
   useRef,

@@ -404,7 +404,6 @@ export async function getJishoDefinition(word: string) {
     });
     if (res.ok) {
         const data = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const found = data?.data?.find(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (d: any) => d.slug === word || d.japanese?.some((j: any) => j.word === word)
@@ -418,5 +417,4 @@ export async function getJishoDefinition(word: string) {
     return { success: false, error: "Failed to proxy request" };
   }
 }
-
 
