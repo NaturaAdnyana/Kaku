@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { SearchToast } from "./SearchToast";
+import { SearchAnimation } from "./SearchAnimation";
 import { useToast } from "./ToastProvider";
 
 export default function ToastContainer() {
@@ -10,7 +10,7 @@ export default function ToastContainer() {
   return (
     <>
       {toasts.map((toast) => (
-        <SearchToast
+        <SearchAnimation
           key={toast.id}
           savePromise={toast.savePromise}
           word={toast.word}
