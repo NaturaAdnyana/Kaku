@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { motion } from "framer-motion";
 
 // ─── Variants (propagate from parent → children) ──────────────────────────────
@@ -51,6 +51,13 @@ const hoverBgVariants = {
   hover: { opacity: 1, scale: 1, transition: { duration: 0.18 } },
 };
 
+const navBlurMaskStyle: CSSProperties = {
+  WebkitMaskImage:
+    "linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 22%, rgba(0, 0, 0, 0.5) 56%, black 100%)",
+  maskImage:
+    "linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 22%, rgba(0, 0, 0, 0.5) 56%, black 100%)",
+};
+
 // ─── NavItem ──────────────────────────────────────────────────────────────────
 
 interface NavItemProps {
@@ -64,7 +71,7 @@ function NavItem({ isActive, label, icon, className }: NavItemProps) {
   return (
     <motion.div
       className={cn(
-        "relative flex flex-col items-center justify-center w-full h-14 rounded-full cursor-pointer select-none",
+        "relative flex h-12 w-full cursor-pointer select-none flex-col items-center justify-center rounded-full sm:h-14",
         className,
       )}
       variants={containerVariants}
@@ -99,15 +106,15 @@ function NavItem({ isActive, label, icon, className }: NavItemProps) {
 
       {/* Label — slide-up reveal */}
       {/* motion.div is required here — a plain div breaks Framer Motion's variant propagation */}
-      <motion.div className="relative overflow-hidden h-[14px] w-full flex justify-center mt-0.5">
+      <motion.div className="relative mt-0.5 flex h-3 w-full justify-center overflow-hidden sm:h-[14px]">
         <motion.span
-          className="absolute text-[10px] font-semibold tracking-wide leading-none"
+          className="absolute text-[9px] leading-none font-semibold tracking-wide sm:text-[10px]"
           variants={labelOutVariants}
         >
           {label}
         </motion.span>
         <motion.span
-          className="absolute text-[10px] font-bold tracking-widest leading-none"
+          className="absolute text-[9px] leading-none font-bold tracking-widest sm:text-[10px]"
           variants={labelInVariants}
         >
           {label}
@@ -148,67 +155,89 @@ export function BottomNav() {
   const activeText = "text-main-foreground";
 
   const themeIcon = (
-    <div className="relative w-[22px] h-[22px] flex items-center justify-center">
+    <div className="relative flex h-5 w-5 items-center justify-center sm:h-[22px] sm:w-[22px]">
       <Moon
         className="absolute transition-transform scale-100 rotate-0 dark:-rotate-90 dark:scale-0"
-        size={22}
+        size={20}
       />
       <Sun
         className="absolute transition-transform scale-0 rotate-90 dark:rotate-0 dark:scale-100"
-        size={22}
+        size={20}
       />
     </div>
   );
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-blank rounded-base shadow-shadow p-2 flex items-center justify-around z-50 border-2 border-border gap-2 transition-all">
-      <Link
-        href="/write"
-        className={cn("flex-1", pathname === "/write" ? activeText : baseText)}
+    <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-24 sm:h-28"
       >
-        <NavItem
-          isActive={pathname === "/write"}
-          label="Write"
-          icon={<PenLine size={22} />}
+        <span
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-blank/10 to-blank/80 backdrop-blur-[18px] sm:backdrop-blur-[20px]"
+          style={navBlurMaskStyle}
         />
-      </Link>
+      </div>
 
-      <Link
-        href="/list"
-        className={cn("flex-1", pathname === "/list" ? activeText : baseText)}
-      >
-        <NavItem
-          isActive={pathname === "/list"}
-          label="List"
-          icon={<ListCollapse size={22} />}
-        />
-      </Link>
-
-      <button
-        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-        aria-label="Toggle theme"
-        className={cn("flex-1", baseText)}
-      >
-        <NavItem label="Theme" icon={themeIcon} />
-      </button>
-
-      {session ? (
-        <button
-          onClick={handleLogout}
-          disabled={isSigningOut}
-          aria-label="Logout"
-          className="flex-1 text-red-400/80 disabled:opacity-60 disabled:cursor-not-allowed"
+      <nav className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1rem)] max-w-sm -translate-x-1/2 items-center justify-around gap-1 overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all isolate sm:bottom-6 sm:w-[95%] sm:gap-2 sm:p-2">
+        <Link
+          href="/write"
+          className={cn(
+            "flex-1",
+            pathname === "/write" ? activeText : baseText,
+          )}
         >
           <NavItem
-            label={isSigningOut ? "..." : "Logout"}
-            icon={<LogOut size={22} />}
+            isActive={pathname === "/write"}
+            label="Write"
+            icon={<PenLine size={20} className="sm:size-[22px]" />}
           />
-        </button>
-      ) : (
-        <Link href="/login" aria-label="Login" className="flex-1 text-blue-600">
-          <NavItem label="Login" icon={<LogIn size={22} />} />
         </Link>
-      )}
-    </nav>
+
+        <Link
+          href="/list"
+          className={cn("flex-1", pathname === "/list" ? activeText : baseText)}
+        >
+          <NavItem
+            isActive={pathname === "/list"}
+            label="List"
+            icon={<ListCollapse size={20} className="sm:size-[22px]" />}
+          />
+        </Link>
+
+        <button
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          aria-label="Toggle theme"
+          className={cn("flex-1", baseText)}
+        >
+          <NavItem label="Theme" icon={themeIcon} />
+        </button>
+
+        {session ? (
+          <button
+            onClick={handleLogout}
+            disabled={isSigningOut}
+            aria-label="Logout"
+            className="flex-1 text-red-400/80 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <NavItem
+              label={isSigningOut ? "..." : "Logout"}
+              icon={<LogOut size={20} className="sm:size-[22px]" />}
+            />
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            aria-label="Login"
+            className="flex-1 text-blue-600"
+          >
+            <NavItem
+              label="Login"
+              icon={<LogIn size={20} className="sm:size-[22px]" />}
+            />
+          </Link>
+        )}
+      </nav>
+    </>
   );
 }

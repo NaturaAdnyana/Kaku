@@ -23,7 +23,6 @@ import {
 import {
   InputGroup,
   InputGroupAddon,
-  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
 
@@ -72,16 +71,16 @@ export function PasswordInput({
             onChange={handleChange}
           />
           <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              size="icon-xs"
-              className="mr-2"
+            <button
+              type="button"
+              className="mr-2 inline-flex size-6 items-center justify-center rounded-md border-0 bg-transparent p-0 text-zinc-400 transition-colors hover:bg-transparent hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-0 dark:text-zinc-500 dark:hover:bg-transparent dark:hover:text-zinc-200"
               onClick={() => setShowPassword((p) => !p)}
             >
               <Icon className="size-4.5" />
               <span className="sr-only">
                 {showPassword ? "Hide password" : "Show password"}
               </span>
-            </InputGroupButton>
+            </button>
           </InputGroupAddon>
         </InputGroup>
         {children}

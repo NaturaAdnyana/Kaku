@@ -312,10 +312,10 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
             {animationMessage && (
               <div
                 className={cn(
-                  "mt-3 rounded-base border-2 border-border px-4 py-2 text-center text-lg font-bold shadow-shadow animate-in fade-in slide-in-from-bottom-2",
+                  "mt-3 max-w-[280px] px-2 text-center text-lg font-black leading-snug tracking-tight animate-in fade-in slide-in-from-bottom-2",
                   animationType === "success"
-                    ? "bg-main text-main-foreground"
-                    : "bg-danger text-white",
+                    ? "text-main"
+                    : "text-danger dark:text-rose-400",
                 )}
               >
                 {animationMessage}

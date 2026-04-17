@@ -78,18 +78,21 @@ export function LoginForm() {
         transition={{ duration: 0.5 }}
       >
         <Card className="border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
-          <CardHeader className="space-y-1 py-4">
-            <CardTitle className="text-3xl font-extrabold text-center tracking-tight">
-              {isLogin ? "Welcome Back" : "Create Account"}
+          <CardHeader className="space-y-1.5 py-3">
+            <p className="text-center text-[11px] font-black uppercase tracking-[0.28em] text-zinc-400 dark:text-zinc-500">
+              {isLogin ? "Sign In" : "Sign Up"}
+            </p>
+            <CardTitle className="text-center text-3xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
+              Kaku!
             </CardTitle>
-            <CardDescription className="text-center text-zinc-500 dark:text-zinc-400">
+            <CardDescription className="text-center text-sm text-zinc-500 dark:text-zinc-400">
               {isLogin
-                ? "Enter your credentials to continue your journey"
-                : "Join Kaku! and start mastering Kanji today"}
+                ? "Sign in to keep writing. A touch pen helps on mobile."
+                : "Create your account and prepare a touch pen for better writing practice."}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-5 pb-8 px-8">
+            <CardContent className="space-y-4 pb-6 px-6 sm:px-8">
               <AnimatePresence mode="wait">
                 {error && (
                   <motion.div
@@ -103,7 +106,7 @@ export function LoginForm() {
                 )}
               </AnimatePresence>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {!isLogin && (
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
@@ -188,10 +191,10 @@ export function LoginForm() {
                 )}
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4 pb-8 px-8">
+            <CardFooter className="flex flex-col space-y-3 pb-6 px-6 sm:px-8">
               <Button
                 type="submit"
-                className="w-full h-12 rounded-xl text-base font-bold shadow-lg transition-all active:scale-[0.98] bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-900 cursor-pointer"
+                className="h-12 w-full rounded-xl text-base font-bold cursor-pointer active:scale-[0.98]"
                 disabled={loading}
               >
                 {loading ? (
