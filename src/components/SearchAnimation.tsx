@@ -132,10 +132,10 @@ export function SearchAnimation({
   return (
     <div
       className={cn(
-        "fixed top-4 left-1/2 -translate-x-1/2 md:top-6 z-[80] flex items-center gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
+        "fixed overflow-hidden top-4 left-1/2 -translate-x-1/2 md:top-6 z-[80] flex items-center flex-row gap-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base p-3 w-[320px] max-w-[calc(100vw-32px)] duration-300",
         isLeaving
-          ? "animate-out slide-out-to-right-12 fade-out"
-          : "animate-in slide-in-from-right-8 slide-in-from-top-4 fade-in",
+          ? "animate-out slide-out-to-top-8 fade-out"
+          : "animate-in slide-in-from-top-8 fade-in",
       )}
     >
       <div className="w-14 h-14 shrink-0 bg-secondary border-2 border-border rounded-base overflow-hidden flex items-center justify-center relative">
@@ -143,6 +143,10 @@ export function SearchAnimation({
           <div className="scale-[1.5]">
             <LottiePlayer animationData={animationData} loop={true} />
           </div>
+        ) : (
+          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+        )}
+      </div>
 
       <div className="flex flex-col flex-1 min-w-0 pr-4">
         <div className="flex items-center gap-1.5">
@@ -193,18 +197,20 @@ export function SearchAnimation({
         </svg>
       </button>
 
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 h-1 bg-main flex origin-left",
-          isReadyToClose ? "animate-toast-progress" : "opacity-40",
-          isLeaving && "opacity-0 transition-opacity",
-        )}
-        style={{
-          width: "100%",
-          animationDuration: "6s",
-          animationTimingFunction: "linear",
-        }}
-      />
+      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-secondary/80 border-t-2 border-border border-b-0 border-x-0">
+        <div
+          className={cn(
+            "h-full origin-left bg-main border-r-2 border-border",
+            isReadyToClose ? "animate-toast-progress" : "opacity-40",
+            isLeaving && "opacity-0 transition-opacity",
+          )}
+          style={{
+            width: "100%",
+            animationDuration: "6s",
+            animationTimingFunction: "linear",
+          }}
+        />
+      </div>
     </div>
   );
 }

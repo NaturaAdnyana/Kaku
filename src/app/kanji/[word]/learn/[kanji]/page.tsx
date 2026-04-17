@@ -2,8 +2,8 @@
 
 import { use } from "react";
 import { LearnCanvas } from "@/components/LearnCanvas";
-import { ChevronLeft, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 import { useSvgAnimations } from "@/hooks/useSvgAnimations";
 
 type Props = {
@@ -26,13 +26,9 @@ export default function LearnKanjiPage({ params }: Props) {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col p-4 sm:p-6 lg:max-w-lg">
         <div className="flex h-full flex-col animate-in fade-in zoom-in-95 duration-200">
           <div className="mb-4 flex items-center justify-between">
-            <Link
-              href={`/kanji/${encodeURIComponent(decodedWord)}`}
-              className="flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-secondary text-foreground shadow-shadow transition-all active:translate-x-boxShadowX active:translate-y-boxShadowY active:shadow-none"
-              aria-label="Back to word details"
-            >
-              <ChevronLeft size={22} />
-            </Link>
+            <BackButton 
+              fallbackUrl={`/kanji/${encodeURIComponent(decodedWord)}`} 
+            />
             <div className="flex flex-col items-center text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Learn to Write

@@ -5,7 +5,13 @@ import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-export function BackButton({ className }: { className?: string }) {
+export function BackButton({
+  className,
+  fallbackUrl = "/list",
+}: {
+  className?: string;
+  fallbackUrl?: string;
+}) {
   const router = useRouter();
 
   const handleBack = () => {
@@ -13,7 +19,7 @@ export function BackButton({ className }: { className?: string }) {
     if (window.history.length > 2) {
       router.back();
     } else {
-      router.push("/list");
+      router.push(fallbackUrl);
     }
   };
 
