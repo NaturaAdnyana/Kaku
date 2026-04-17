@@ -142,7 +142,7 @@ export default async function KanjiDetailPage({ params }: Props) {
                       </div>
                     }
                   >
-                    {kanjiApiEntry && kanjiApiEntry.meanings?.length > 0 ? (
+                    {kanjiApiEntry?.meanings && kanjiApiEntry.meanings.length > 0 ? (
                       <div className="flex flex-col gap-4">
                         <div className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2">
                           <p className="text-lg font-medium text-foreground leading-snug capitalize">
