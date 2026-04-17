@@ -30,12 +30,29 @@ import {
 import { cn, getSearchCountColor } from "@/lib/utils";
 import { useInView } from "react-intersection-observer";
 import React from "react";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+
+type SavedListItem = {
+  id: string;
+  userId: string;
+  character: string;
+  searchCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const LIST_PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 500;
+const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+});
 
 // Skeleton component for list items only
 export function KanjiListSkeleton({ count = 5 }: { count?: number }) {
@@ -63,22 +80,29 @@ export function KanjiListSkeleton({ count = 5 }: { count?: number }) {
 export function KanjiSkeleton() {
   return (
     <div className="flex flex-col w-full gap-4">
-      {/* Search Bar Skeleton */}
-      <div className="pt-2 pb-4 px-2 mb-2 flex flex-col gap-4">
-        <div className="w-full h-12 bg-secondary border-2 border-border rounded-base animate-pulse shadow-shadow" />
-        <div className="flex justify-between items-center px-1">
-          <div className="w-32 h-4 bg-secondary rounded animate-pulse" />
-        </div>
+      {/* Count + Sort skeleton */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div className="h-8 w-32 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+        <div className="h-10 w-36 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-800" />
       </div>
       <KanjiListSkeleton />
     </div>
   );
 }
 
-export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
+export function KanjiList({
+  type = "kanji",
+  externalSearch,
+}: {
+  type?: "kanji" | "word";
+  externalSearch?: string;
+}) {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch] = useDebounce(searchTerm, 500);
+  // Internal search state – only used when no external value is provided
+  const [internalSearch, setInternalSearch] = useState("");
+  const searchTerm = externalSearch ?? internalSearch;
+  const [debouncedSearch] = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
   const [characterToDelete, setCharacterToDelete] = useState<string | null>(
     null,
   );
@@ -100,7 +124,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
       const getListFn = type === "kanji" ? getKanjiList : getWordList;
       const res = await getListFn(
         pageParam as number,
-        20,
+        LIST_PAGE_SIZE,
         debouncedSearch,
         sortBy,
       );
@@ -127,15 +151,7 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
   });
 
   const kanjiItems = useMemo(() => {
-    type BaseItem = {
-      id: string;
-      userId: string;
-      character: string;
-      searchCount: number;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-    return data?.pages.flatMap((page) => (page.data || []) as BaseItem[]) ?? [];
+    return data?.pages.flatMap((page) => (page.data || []) as SavedListItem[]) ?? [];
   }, [data]);
 
   const total = data?.pages[0]?.totalCount ?? 0;
@@ -169,8 +185,8 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
 
   return (
     <div className="flex flex-col w-full pb-20">
-      <div className="sticky top-0 z-10 mb-4 pt-2 pb-4">
-        <div className="flex flex-col gap-3">
+      {externalSearch === undefined && (
+        <div className="sticky top-0 z-10 mb-4 pt-2 pb-4">
           <div className="relative group">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-200"
@@ -179,20 +195,23 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
             <input
               type="text"
               placeholder={`Search ${type === "kanji" ? "saved kanji" : "saved words"}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={internalSearch}
+              onChange={(e) => setInternalSearch(e.target.value)}
               className="w-full bg-blank border-2 border-border shadow-shadow rounded-base text-sm text-foreground py-3 pr-11 pl-11 outline-none transition-all placeholder:text-muted-foreground focus:ring-4 focus:ring-main focus:translate-x-boxShadowX focus:translate-y-boxShadowY focus:shadow-none"
             />
-            {searchTerm && (
+            {internalSearch && (
               <button
-                onClick={() => setSearchTerm("")}
+                onClick={() => setInternalSearch("")}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X size={16} />
               </button>
             )}
           </div>
+        </div>
+      )}
 
+      <div className="sticky top-0 z-10 mb-4 pt-2 pb-2">
           <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <div className="flex min-w-0 items-center gap-2">
               <span className="inline-flex shrink-0 items-center gap-1.5 border-2 border-border bg-main px-3 py-1 text-sm font-bold tabular-nums text-main-foreground shadow-shadow rounded-base">
@@ -252,7 +271,6 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
             </Select>
           </div>
         </div>
-      </div>
 
       {isLoading ? (
         <KanjiListSkeleton />
@@ -282,21 +300,25 @@ export function KanjiList({ type = "kanji" }: { type?: "kanji" | "word" }) {
           {kanjiItems.map((item, index) => {
             const isLast = index === kanjiItems.length - 1;
             const itemLength = Array.from(item.character).length;
-            const updatedLabel = new Date(item.updatedAt).toLocaleDateString(
-              undefined,
-              {
-                month: "short",
-                day: "numeric",
-              },
+            const updatedLabel = UPDATED_AT_FORMATTER.format(
+              new Date(item.updatedAt),
             );
 
             return (
               <div
                 key={item.id}
                 ref={isLast ? ref : null}
+                role="link"
+                tabIndex={0}
                 className="group relative flex cursor-pointer items-center justify-between gap-4 rounded-base border-2 border-border bg-blank p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
-                onClick={() => {
-                  window.location.href = `/kanji/${encodeURIComponent(item.character)}`;
+                onClick={() =>
+                  router.push(`/kanji/${encodeURIComponent(item.character)}`)
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    router.push(`/kanji/${encodeURIComponent(item.character)}`);
+                  }
                 }}
               >
                 <div className="relative z-10 flex min-w-0 flex-1 items-center gap-4">

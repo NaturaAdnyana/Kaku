@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
+import Image from "next/image";
 import { LottiePlayer } from "@/components/LottieCanvas";
 import { useLottieAnimation } from "@/hooks/useLottieAnimation";
 import { Loader2 } from "lucide-react";
@@ -73,7 +74,7 @@ export function SearchAnimation({
       if (mounted) {
         setIsReadyToClose(true);
       }
-    }, 3000);
+    }, ANALYSIS_FALLBACK_MS);
 
     savePromise
       .then((res) => {
@@ -119,9 +120,11 @@ export function SearchAnimation({
   useEffect(() => {
     if (!isReadyToClose) return;
 
-    const totalTime = 6000;
-    const leaveTimer = setTimeout(() => setIsLeaving(true), totalTime - 300);
-    const completeTimer = setTimeout(() => onComplete?.(), totalTime);
+    const leaveTimer = setTimeout(
+      () => setIsLeaving(true),
+      RESULT_TOAST_DURATION - EXIT_ANIMATION_DURATION,
+    );
+    const completeTimer = setTimeout(onComplete, RESULT_TOAST_DURATION);
 
     return () => {
       clearTimeout(leaveTimer);
@@ -149,34 +152,43 @@ export function SearchAnimation({
       </div>
 
       <div className="flex flex-col flex-1 min-w-0 pr-4">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-main">
-            Search Hit #{searchCount}
-          </span>
-          {level === 4 && (
-            <img
-              src="/animations/fire.gif"
-              alt="Fire!"
-              className="w-3.5 h-3.5 object-contain"
-            />
-          )}
-        </div>
-
-        <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
-          {message}
-        </p>
-
-        {!isReadyToClose && (
-          <span className="text-[10px] font-medium text-muted-foreground mt-1 animate-pulse">
-            Analyzing...
-          </span>
+        {isReadyToClose ? (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-main">
+                Search Hit #{searchCount}
+              </span>
+              {level === 4 && (
+                <Image
+                  src="/animations/fire.gif"
+                  alt="Fire!"
+                  width={14}
+                  height={14}
+                  className="h-3.5 w-3.5 object-contain"
+                  unoptimized
+                />
+              )}
+            </div>
+            <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
+              {message}
+            </p>
+          </>
+        ) : (
+          <>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground animate-pulse">
+              Analyzing...
+            </span>
+            <p className="text-sm font-bold text-foreground leading-tight mt-0.5 line-clamp-2">
+              Checking your search history...
+            </p>
+          </>
         )}
       </div>
 
       <button
         onClick={() => {
           setIsLeaving(true);
-          setTimeout(() => onComplete?.(), 300);
+          setTimeout(() => onComplete?.(), EXIT_ANIMATION_DURATION);
         }}
         className="absolute top-2 right-2 text-muted-foreground hover:text-foreground hover:scale-110 transition-transform cursor-pointer"
         aria-label="Close"
@@ -206,7 +218,7 @@ export function SearchAnimation({
           )}
           style={{
             width: "100%",
-            animationDuration: "6s",
+            animationDuration: "5700ms",
             animationTimingFunction: "linear",
           }}
         />

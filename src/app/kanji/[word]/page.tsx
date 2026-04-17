@@ -1,12 +1,42 @@
-import { buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
 import { BackButton } from "@/components/BackButton";
 import { WordDetailCard } from "@/components/WordDetailCard";
 import { DeleteWordButton } from "@/components/DeleteWordButton";
-import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { URLTabs } from "@/components/URLTabs";
 import { KanjiBanner } from "@/components/KanjiBanner";
 import { getWordsForKanji } from "@/app/actions/kanji";
+import { Suspense } from "react";
+import { TabPendingContent } from "@/components/TabPendingContent";
+
+type JishoJapaneseEntry = {
+  word?: string;
+};
+
+type JishoSense = {
+  english_definitions?: string[];
+  parts_of_speech?: string[];
+};
+
+type JishoEntry = {
+  slug: string;
+  japanese?: JishoJapaneseEntry[];
+  senses?: JishoSense[];
+};
+
+type KanjiApiEntry = {
+  meanings?: string[];
+  jlpt: number | null;
+  grade: number | null;
+  stroke_count: number | null;
+  kun_readings?: string[];
+  on_readings?: string[];
+};
+
+type SavedWord = {
+  id: string;
+  word: string;
+  searchCount: number;
+};
 
 type Props = {
   params: Promise<{
@@ -14,60 +44,64 @@ type Props = {
   }>;
 };
 
-export default async function KanjiDetailPage({ params }: Props) {
-  // Await the params for Next.js 15
-  const { word } = await params;
-  const decodedWord = decodeURIComponent(word);
-  const isSingleKanji = decodedWord.length === 1;
-
-  // 2. Fetch Jisho API for Definitions
-  let apiEntry = null;
-  let allResults = [];
+async function getJishoResults(decodedWord: string): Promise<JishoEntry[]> {
   try {
     const res = await fetch(
       `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(decodedWord)}`,
       { cache: "force-cache" },
     );
-    if (res.ok) {
-      const jishoData = await res.json();
-      allResults = jishoData?.data || [];
-      // Find the exact match or first match
-      apiEntry =
-        allResults.find(
-          (d: any) =>
-            d.slug === decodedWord ||
-            d.japanese?.some((j: any) => j.word === decodedWord),
-        ) || allResults[0];
+    if (!res.ok) {
+      return [];
     }
-  } catch (e) {
-    console.error("Jisho API Error", e);
+
+    const jishoData = (await res.json()) as { data?: JishoEntry[] };
+    return jishoData.data ?? [];
+  } catch (error) {
+    console.error("Jisho API Error", error);
+    return [];
+  }
+}
+
+async function getKanjiDetails(
+  decodedWord: string,
+  isSingleKanji: boolean,
+): Promise<KanjiApiEntry | null> {
+  if (!isSingleKanji) {
+    return null;
   }
 
-  // 3. Fetch Kanji API for Single Kanji
-  let kanjiApiEntry = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let savedWords: any[] = [];
-  if (isSingleKanji) {
-    try {
-      const [res, wordsRes] = await Promise.all([
-        fetch(
-          `https://kanjiapi.dev/v1/kanji/${encodeURIComponent(decodedWord)}`,
-          { cache: "force-cache" },
-        ),
-        getWordsForKanji(decodedWord),
-      ]);
+  try {
+    const res = await fetch(
+      `https://kanjiapi.dev/v1/kanji/${encodeURIComponent(decodedWord)}`,
+      { cache: "force-cache" },
+    );
 
-      if (res.ok) {
-        kanjiApiEntry = await res.json();
-      }
-
-      if (wordsRes.success && wordsRes.data) {
-        savedWords = wordsRes.data;
-      }
-    } catch (e) {
-      console.error("Kanji/DB API Error", e);
+    if (!res.ok) {
+      return null;
     }
+
+    return (await res.json()) as KanjiApiEntry;
+  } catch (error) {
+    console.error("Kanji API Error", error);
+    return null;
   }
+}
+
+export default async function KanjiDetailPage({ params }: Props) {
+  const { word } = await params;
+  const decodedWord = decodeURIComponent(word);
+  const isSingleKanji = decodedWord.length === 1;
+
+  const [allResults, kanjiApiEntry] = await Promise.all([
+    getJishoResults(decodedWord),
+    getKanjiDetails(decodedWord, isSingleKanji),
+  ]);
+  const apiEntry =
+    allResults.find(
+      (entry) =>
+        entry.slug === decodedWord ||
+        entry.japanese?.some((japaneseEntry) => japaneseEntry.word === decodedWord),
+    ) ?? allResults[0] ?? null;
 
   return (
     <div className="flex flex-col min-h-dvh bg-bg font-sans relative overflow-hidden pb-24">
@@ -88,7 +122,7 @@ export default async function KanjiDetailPage({ params }: Props) {
           {isSingleKanji ? (
             <>
               <KanjiDetailsDisplay kanjiData={kanjiApiEntry} />
-              <Tabs defaultValue="meaning" className="w-full">
+              <URLTabs defaultValue="meaning" className="w-full">
                 <TabsList className="w-full mb-6">
                   <TabsTrigger value="meaning" className="w-full">
                     Meaning
@@ -98,68 +132,51 @@ export default async function KanjiDetailPage({ params }: Props) {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="meaning" className="mt-0">
-                  {kanjiApiEntry && kanjiApiEntry.meanings?.length > 0 ? (
-                    <div className="flex flex-col gap-4">
-                      <div className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2">
-                        <p className="text-lg font-medium text-foreground leading-snug capitalize">
-                          {kanjiApiEntry.meanings.join(", ")}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <MeaningContent apiEntry={apiEntry} showTitle={false} />
-                  )}
-                </TabsContent>
-                <TabsContent value="words" className="mt-0">
-                  <div className="flex flex-col gap-6">
-                    {/* User's Saved Words */}
-                    {savedWords.length > 0 && (
+                  <TabPendingContent
+                    skeleton={
                       <div className="flex flex-col gap-3">
-                        <h2 className="text-lg font-bold px-2">
-                          Your Saved Words
-                        </h2>
-                        {savedWords.map((userWord) => (
-                          <WordDetailCard
-                            key={userWord.id}
-                            word={userWord.word}
-                            isSaved={true}
-                            searchCount={userWord.searchCount}
-                          />
+                        {[...Array(2)].map((_, i) => (
+                          <div key={i} className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base h-20 animate-pulse" />
                         ))}
                       </div>
-                    )}
-
-                    {/* Dictionary Words */}
-                    <div className="flex flex-col gap-3">
-                      {savedWords.length > 0 && (
-                        <h2 className="text-lg font-bold px-2">Dictionary</h2>
-                      )}
-                      {allResults.length > 1 ? (
-                        allResults.slice(0, 15).map((entry: any, i: number) => {
-                          // Skip the current word if length > 1 (though Jisho results usually start with it)
-                          const wordChar = entry.japanese[0].word || entry.slug;
-                          // Avoid rendering dictionary words if they are already in the saved list
-                          if (savedWords.some((w) => w.word === wordChar))
-                            return null;
-
-                          return (
-                            <WordDetailCard
-                              key={i}
-                              word={wordChar}
-                              initialEntry={entry}
-                              isSaved={false}
-                            />
-                          );
-                        })
-                      ) : (
-                        <div className="p-8 text-center text-foreground border-2 border-dashed border-border rounded-base bg-secondary">
-                          No additional words found.
+                    }
+                  >
+                    {kanjiApiEntry && kanjiApiEntry.meanings?.length > 0 ? (
+                      <div className="flex flex-col gap-4">
+                        <div className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2">
+                          <p className="text-lg font-medium text-foreground leading-snug capitalize">
+                            {kanjiApiEntry.meanings.join(", ")}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    ) : (
+                      <MeaningContent apiEntry={apiEntry} showTitle={false} />
+                    )}
+                  </TabPendingContent>
                 </TabsContent>
-              </Tabs>
+                <TabsContent value="words" className="mt-0">
+                  <TabPendingContent
+                    skeleton={
+                      <div className="p-8 text-center font-bold text-foreground border-2 border-dashed border-border rounded-base bg-secondary shadow-shadow animate-pulse">
+                        Loading vocabulary...
+                      </div>
+                    }
+                  >
+                    <Suspense
+                      fallback={
+                        <div className="p-8 text-center font-bold text-foreground border-2 border-dashed border-border rounded-base bg-secondary shadow-shadow">
+                          Loading vocabulary...
+                        </div>
+                      }
+                    >
+                      <WordsTabContent
+                        decodedWord={decodedWord}
+                        allResults={allResults}
+                      />
+                    </Suspense>
+                  </TabPendingContent>
+                </TabsContent>
+              </URLTabs>
             </>
           ) : (
             <MeaningContent apiEntry={apiEntry} />
@@ -174,7 +191,7 @@ function MeaningContent({
   apiEntry,
   showTitle = true,
 }: {
-  apiEntry: any;
+  apiEntry: JishoEntry | null;
   showTitle?: boolean;
 }) {
   if (!apiEntry) {
@@ -189,7 +206,7 @@ function MeaningContent({
     <div className="flex flex-col gap-4">
       {showTitle && <h2 className="text-lg font-bold px-2">Meanings</h2>}
 
-      {apiEntry.senses?.map((sense: any, index: number) => (
+      {apiEntry.senses?.map((sense, index) => (
         <div
           key={index}
           className="p-5 bg-blank border-2 border-border shadow-shadow rounded-base flex flex-col gap-2"
@@ -220,11 +237,10 @@ function MeaningContent({
 function KanjiDetailsDisplay({
   kanjiData,
 }: {
-  kanjiData: Record<string, unknown> | null;
+  kanjiData: KanjiApiEntry | null;
 }) {
   if (!kanjiData) return null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const kd = kanjiData as Record<string, any>;
+  const kd = kanjiData;
 
   return (
     <div className="bg-blank border-2 border-border rounded-base p-5 shadow-shadow flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 mb-6">
@@ -293,6 +309,76 @@ function KanjiDetailsDisplay({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+async function WordsTabContent({
+  decodedWord,
+  allResults,
+}: {
+  decodedWord: string;
+  allResults: JishoEntry[];
+}) {
+  let savedWords: SavedWord[] = [];
+  try {
+    const wordsRes = await getWordsForKanji(decodedWord);
+    if (wordsRes.success && wordsRes.data) {
+      savedWords = wordsRes.data as SavedWord[];
+    }
+  } catch (error) {
+    console.error("DB API Error in WordsTabContent", error);
+  }
+
+  const savedWordSet = new Set(savedWords.map((savedWord) => savedWord.word));
+  const dictionaryWords = allResults
+    .slice(0, 15)
+    .filter((entry) => {
+      const wordChar = entry.japanese?.[0]?.word || entry.slug;
+      return wordChar !== decodedWord && !savedWordSet.has(wordChar);
+    });
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* User's Saved Words */}
+      {savedWords.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-bold px-2">Your Saved Words</h2>
+          {savedWords.map((userWord) => (
+            <WordDetailCard
+              key={userWord.id}
+              word={userWord.word}
+              isSaved={true}
+              searchCount={userWord.searchCount}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Dictionary Words */}
+      <div className="flex flex-col gap-3">
+        {savedWords.length > 0 && (
+          <h2 className="text-lg font-bold px-2">Dictionary</h2>
+        )}
+        {dictionaryWords.length > 0 ? (
+          dictionaryWords.map((entry) => {
+            const wordChar = entry.japanese?.[0]?.word || entry.slug;
+
+            return (
+              <WordDetailCard
+                key={`${entry.slug}-${wordChar}`}
+                word={wordChar}
+                initialEntry={entry}
+                isSaved={false}
+              />
+            );
+          })
+        ) : (
+          <div className="p-8 text-center text-foreground border-2 border-dashed border-border rounded-base bg-secondary shadow-[4px_4px_0_var(--border)]">
+            No additional words found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

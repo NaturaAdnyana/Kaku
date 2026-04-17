@@ -1,5 +1,4 @@
-import { KanjiList } from "@/components/KanjiList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ListPageContent } from "@/components/ListPageContent";
 
 export default function ListPage() {
   return (
@@ -18,26 +17,7 @@ export default function ListPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="words" className="w-full">
-            <div className="mb-6 px-1">
-              <TabsList className="w-full bg-background/85 backdrop-blur-sm p-1 space-x-1 h-auto">
-                <TabsTrigger value="words" className="flex-1 rounded-sm">
-                  Words
-                </TabsTrigger>
-                <TabsTrigger value="kanji" className="flex-1 rounded-sm">
-                  Kanji
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="words" className="mt-0 outline-none">
-              <KanjiList type="word" />
-            </TabsContent>
-
-            <TabsContent value="kanji" className="mt-0 outline-none">
-              <KanjiList type="kanji" />
-            </TabsContent>
-          </Tabs>
+          <ListPageContent />
         </div>
       </main>
     </div>
