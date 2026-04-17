@@ -6,6 +6,10 @@ import { useLottieAnimation } from "@/hooks/useLottieAnimation";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const RESULT_TOAST_DURATION = 6000;
+const EXIT_ANIMATION_DURATION = 300;
+const ANALYSIS_FALLBACK_MS = 3000;
+
 const getMessages = (word: string): Record<number, string[]> => ({
   1: [
     `Ready to learn ${word}?`,
@@ -139,10 +143,6 @@ export function SearchAnimation({
           <div className="scale-[1.5]">
             <LottiePlayer animationData={animationData} loop={true} />
           </div>
-        ) : (
-          <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
-        )}
-      </div>
 
       <div className="flex flex-col flex-1 min-w-0 pr-4">
         <div className="flex items-center gap-1.5">
