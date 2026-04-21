@@ -4,6 +4,13 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Undo, Trash2, Loader2, Check } from "lucide-react";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
+import {
+  drawStrokeDot,
+  drawStrokeSegment,
+  getCanvasCoordinates,
+  redrawHandwritingCanvas,
+  resizeSquareCanvas,
+} from "@/lib/handwriting-canvas";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -38,6 +45,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const tracesRef = useRef<Trace>([]);
 
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
@@ -61,41 +69,9 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
 
   const redraw = useCallback(
     (currentTraces: Trace) => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw guide lines
-      ctx.strokeStyle = guideColor;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 0);
-      ctx.lineTo(canvas.width / 2, canvas.height);
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-
-      ctx.setLineDash([]);
-      ctx.strokeStyle = strokeColor;
-
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      currentTraces.forEach((stroke) => {
-        const xs = stroke[0];
-        const ys = stroke[1];
-        if (xs.length === 0) return;
-
-        ctx.beginPath();
-        ctx.moveTo(xs[0], ys[0]);
-        for (let i = 1; i < xs.length; i++) {
-          ctx.lineTo(xs[i], ys[i]);
-        }
-        ctx.stroke();
+      redrawHandwritingCanvas(canvasRef.current, currentTraces, {
+        guideColor,
+        strokeColor,
       });
     },
     [guideColor, strokeColor],
@@ -104,23 +80,19 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
   // Resize canvas
   useEffect(() => {
     const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (canvas && container) {
-        const size = Math.min(container.clientWidth, 400);
-        canvas.width = size;
-        canvas.height = size;
-        redraw(traces);
+      if (resizeSquareCanvas(canvasRef.current, containerRef.current)) {
+        redraw(tracesRef.current);
       }
     };
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     return () => window.removeEventListener("resize", resizeCanvas);
-  }, [redraw, traces]);
+  }, [redraw]);
 
   // Redraw whenever traces change
   useEffect(() => {
+    tracesRef.current = traces;
     if (!animationType) {
       redraw(traces);
     }
@@ -192,29 +164,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
   // Drawing Logic
   const getCoordinates = (
     e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent,
-  ) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-
-    let clientX, clientY;
-
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = (e as React.MouseEvent).clientX;
-      clientY = (e as React.MouseEvent).clientY;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
-    };
-  };
+  ) => getCanvasCoordinates(canvasRef.current, e);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -222,14 +172,7 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
     const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     setCurrentStroke([[x], [y], [Date.now()]]);
-
-    const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) {
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = strokeColor;
-      ctx.fill();
-    }
+    drawStrokeDot(canvasRef.current, x, y, strokeColor);
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -242,16 +185,12 @@ export function LearnCanvas({ targetKanji, svgContent }: LearnCanvasProps) {
     if (ctx && currentStroke[0].length > 0) {
       const lastX = currentStroke[0][currentStroke[0].length - 1];
       const lastY = currentStroke[1][currentStroke[1].length - 1];
-
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = strokeColor;
-
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.stroke();
+      drawStrokeSegment(
+        canvasRef.current,
+        { x: lastX, y: lastY },
+        { x, y },
+        strokeColor,
+      );
 
       setCurrentStroke((prev) => [
         [...prev[0], x],

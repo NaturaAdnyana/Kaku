@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ChevronUp, Eye } from "lucide-react";
+import { Check, ChevronRight, ChevronUp, Eye, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCompareWords } from "@/components/CompareWordsProvider";
+import {
+  getPrimaryJishoDefinition,
+  getPrimaryJishoReading,
+  type JishoEntry,
+} from "@/lib/jisho";
 
 import { getJishoDefinition } from "@/app/actions/kanji";
 
@@ -11,8 +17,8 @@ type WordCardProps = {
   word: string;
   isSaved?: boolean;
   searchCount?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialEntry?: any;
+  initialEntry?: JishoEntry | null;
+  compareSourceWord?: string;
 };
 
 export function WordDetailCard({
@@ -20,11 +26,17 @@ export function WordDetailCard({
   isSaved,
   searchCount,
   initialEntry,
+  compareSourceWord,
 }: WordCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [entry, setEntry] = useState<any>(initialEntry);
+  const [entry, setEntry] = useState<JishoEntry | null>(initialEntry ?? null);
+  const { isSelected, toggleWord } = useCompareWords();
+
+  const reading = getPrimaryJishoReading(entry);
+  const definition = getPrimaryJishoDefinition(entry);
+  const isCompareSelected =
+    compareSourceWord !== undefined && isSelected(word, compareSourceWord);
 
   const fetchMeaning = async () => {
     if (entry) {
@@ -36,7 +48,7 @@ export function WordDetailCard({
     try {
       const res = await getJishoDefinition(word);
       if (res.success && res.data) {
-        setEntry(res.data);
+        setEntry(res.data as JishoEntry);
       }
     } catch (e) {
       console.error(e);
@@ -64,12 +76,16 @@ export function WordDetailCard({
         <div className="flex flex-col flex-1 min-w-0 justify-center overflow-hidden">
           {!isSaved && entry ? (
             <>
-              <span className="text-xs text-foreground font-bold font-jp truncate">
-                {entry.japanese?.[0]?.reading}
-              </span>
-              <p className="text-sm text-foreground/80 font-medium mt-0.5 truncate w-full">
-                {entry.senses?.[0]?.english_definitions?.join(", ")}
-              </p>
+              {reading && (
+                <span className="text-xs text-foreground font-bold font-jp truncate">
+                  {reading}
+                </span>
+              )}
+              {definition && (
+                <p className="text-sm text-foreground/80 font-medium mt-0.5 truncate w-full">
+                  {definition}
+                </p>
+              )}
             </>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
@@ -84,6 +100,30 @@ export function WordDetailCard({
 
         {/* Buttons strictly pinned to the right */}
         <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {compareSourceWord && (
+            <button
+              onClick={() => toggleWord(word, compareSourceWord)}
+              className={cn(
+                "flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border rounded-base text-foreground transition-all cursor-pointer shrink-0 group",
+                isCompareSelected
+                  ? "bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                  : "bg-secondary shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none",
+              )}
+              aria-label={
+                isCompareSelected ? "Remove from compare" : "Add to compare"
+              }
+            >
+              <span className="text-[10px] uppercase font-bold tracking-widest hidden sm:block">
+                {isCompareSelected ? "Added" : "Compare"}
+              </span>
+              {isCompareSelected ? (
+                <Check size={18} className="group-active:text-main-foreground" />
+              ) : (
+                <Scale size={18} className="group-active:text-main-foreground" />
+              )}
+            </button>
+          )}
+
           {isSaved && (
             <button
               onClick={fetchMeaning}
@@ -124,12 +164,16 @@ export function WordDetailCard({
       {/* Spilled Meaning Dropdown */}
       {isSaved && isExpanded && entry && (
         <div className="pt-3 border-t-2 border-border/50 animate-in fade-in slide-in-from-top-2 flex flex-col gap-1.5">
-          <span className="text-xs text-foreground font-bold font-jp">
-            {entry.japanese?.[0]?.reading}
-          </span>
-          <p className="text-sm text-foreground/90 font-medium break-words whitespace-normal">
-            {entry.senses?.[0]?.english_definitions?.join(", ")}
-          </p>
+          {reading && (
+            <span className="text-xs text-foreground font-bold font-jp">
+              {reading}
+            </span>
+          )}
+          {definition && (
+            <p className="text-sm text-foreground/90 font-medium break-words whitespace-normal">
+              {definition}
+            </p>
+          )}
         </div>
       )}
       {isSaved && isExpanded && !entry && !isFetching && (

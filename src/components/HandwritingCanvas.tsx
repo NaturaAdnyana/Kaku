@@ -2,15 +2,41 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  SearchAnalysisToastCard,
+  SearchResultToastCard,
+} from "@/components/SearchToastCards";
 import { Undo, Trash2, Loader2, Search, X, PenLine } from "lucide-react";
 import { saveWord } from "@/app/actions/kanji";
 import { recognizeHandwriting, Trace, Stroke } from "@/lib/handwriting";
+import { getSearchResultToast } from "@/lib/search-toast";
+import {
+  drawStrokeDot,
+  drawStrokeSegment,
+  getCanvasCoordinates,
+  redrawHandwritingCanvas,
+  resizeSquareCanvas,
+} from "@/lib/handwriting-canvas";
 import { useTheme } from "next-themes";
-import { useToast } from "./ToastProvider";
-
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+const CUSTOM_SEARCH_TOAST_PROPS = {
+  unstyled: true,
+  className: "!w-auto !max-w-none !border-0 !bg-transparent !p-0 !shadow-none",
+  style: {
+    width: "auto",
+    maxWidth: "none",
+    background: "transparent",
+    border: "0",
+    padding: "0",
+    boxShadow: "none",
+  },
+} as const;
 
 export function HandwritingCanvas() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { resolvedTheme } = useTheme();
   const strokeColor = resolvedTheme === "dark" ? "#ffffff" : "#000000";
@@ -19,6 +45,7 @@ export function HandwritingCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const recognizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tracesRef = useRef<Trace>([]);
 
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
@@ -33,46 +60,11 @@ export function HandwritingCanvas() {
   const [composedWord, setComposedWord] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Animation state (handled by provider)
-  const { triggerSearchAnimation } = useToast();
-
   const redraw = useCallback(
     (currentTraces: Trace) => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw guide lines
-      ctx.strokeStyle = guideColor;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 0);
-      ctx.lineTo(canvas.width / 2, canvas.height);
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-
-      ctx.setLineDash([]);
-      ctx.strokeStyle = strokeColor;
-
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      currentTraces.forEach((stroke) => {
-        const xs = stroke[0];
-        const ys = stroke[1];
-        if (xs.length === 0) return;
-
-        ctx.beginPath();
-        ctx.moveTo(xs[0], ys[0]);
-        for (let i = 1; i < xs.length; i++) {
-          ctx.lineTo(xs[i], ys[i]);
-        }
-        ctx.stroke();
+      redrawHandwritingCanvas(canvasRef.current, currentTraces, {
+        guideColor,
+        strokeColor,
       });
     },
     [guideColor, strokeColor],
@@ -81,25 +73,19 @@ export function HandwritingCanvas() {
   // --- Resize canvas ---
   useEffect(() => {
     const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (canvas && container) {
-        const size = Math.min(container.clientWidth, 400);
-        canvas.width = size;
-        canvas.height = size;
-        // Redraw using the current traces in state via the canvas ref
-        redraw(traces);
+      if (resizeSquareCanvas(canvasRef.current, containerRef.current)) {
+        redraw(tracesRef.current);
       }
     };
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     return () => window.removeEventListener("resize", resizeCanvas);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [redraw]);
 
   // Redraw whenever traces change
   useEffect(() => {
+    tracesRef.current = traces;
     redraw(traces);
   }, [traces, redraw]);
 
@@ -137,44 +123,14 @@ export function HandwritingCanvas() {
   // --- Drawing Logic ---
   const getCoordinates = (
     e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent,
-  ) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-
-    let clientX, clientY;
-
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = (e as React.MouseEvent).clientX;
-      clientY = (e as React.MouseEvent).clientY;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
-    };
-  };
+  ) => getCanvasCoordinates(canvasRef.current, e);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     setCurrentStroke([[x], [y], [Date.now()]]);
-
-    const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) {
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = strokeColor;
-
-      ctx.fill();
-    }
+    drawStrokeDot(canvasRef.current, x, y, strokeColor);
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -187,16 +143,12 @@ export function HandwritingCanvas() {
     if (ctx && currentStroke[0].length > 0) {
       const lastX = currentStroke[0][currentStroke[0].length - 1];
       const lastY = currentStroke[1][currentStroke[1].length - 1];
-
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = strokeColor;
-
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.stroke();
+      drawStrokeSegment(
+        canvasRef.current,
+        { x: lastX, y: lastY },
+        { x, y },
+        strokeColor,
+      );
 
       setCurrentStroke((prev) => [
         [...prev[0], x],
@@ -247,21 +199,72 @@ export function HandwritingCanvas() {
     if (!composedWord.trim() || isSaving) return;
 
     setIsSaving(true);
-    
-    // 1. Kick off DB save in BACKGROUND (do not await)
-    const savePromise = saveWord(composedWord).then((response) => {
-      if ("success" in response && response.success) {
-        queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
-        queryClient.invalidateQueries({ queryKey: ["word-list"] });
-      }
-      return response;
-    }).finally(() => {
-      setIsSaving(false);
-    });
+    const targetWord = composedWord.trim();
+    const targetUrl = `/kanji/${targetWord}`;
+    const loadingToastId = toast.custom(
+      () => (
+        <SearchAnalysisToastCard
+          title="Analyzing"
+          description="Checking your search history..."
+        />
+      ),
+      {
+        duration: Infinity,
+        ...CUSTOM_SEARCH_TOAST_PROPS,
+      },
+    );
 
-    // 2. Trigger UI transition IMMEDIATELY
-    triggerSearchAnimation(`/kanji/${composedWord}`, savePromise, composedWord);
-    
+    const showSaveErrorToast = () => {
+      toast.error("Failed to save word.", {
+        description: "The word page opened, but the search could not be saved.",
+      });
+    };
+
+    const showResultToast = (searchCount: number) => {
+      const resultToast = getSearchResultToast(targetWord, searchCount);
+
+      toast.custom(
+        (id) => (
+          <SearchResultToastCard
+            title={resultToast.title}
+            description={resultToast.description}
+            duration={resultToast.duration}
+            level={resultToast.level}
+            onClose={() => toast.dismiss(id)}
+          />
+        ),
+        {
+          duration: resultToast.duration,
+          ...CUSTOM_SEARCH_TOAST_PROPS,
+        },
+      );
+    };
+
+    void saveWord(targetWord)
+      .then((response) => {
+        toast.dismiss(loadingToastId);
+
+        if ("success" in response && response.success) {
+          queryClient.invalidateQueries({ queryKey: ["kanji-list"] });
+          queryClient.invalidateQueries({ queryKey: ["word-list"] });
+          showResultToast(response.searchCount ?? 1);
+        } else {
+          showSaveErrorToast();
+        }
+
+        return response;
+      })
+      .catch((error) => {
+        toast.dismiss(loadingToastId);
+        showSaveErrorToast();
+        throw error;
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
+
+    router.push(targetUrl);
+
     setComposedWord("");
     handleClearCanvas();
   };

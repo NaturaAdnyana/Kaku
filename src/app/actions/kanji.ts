@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { findBestJishoEntry, type JishoResponse } from "@/lib/jisho";
 import { kanji, userKanji, word, userWord, wordKanji } from "@/lib/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -164,6 +165,15 @@ export async function getKanjiList(
         kanjiId: userKanji.kanjiId,
         character: kanji.character,
         searchCount: userKanji.searchCount,
+        wordCount: sql<number>`
+          (
+            select count(distinct ${userWord.wordId})
+            from ${wordKanji}
+            inner join ${userWord} on ${userWord.wordId} = ${wordKanji.wordId}
+            where ${wordKanji.kanjiId} = ${userKanji.kanjiId}
+              and ${userWord.userId} = ${userId}
+          )
+        `,
         createdAt: userKanji.createdAt,
         updatedAt: userKanji.updatedAt,
       })
@@ -403,12 +413,9 @@ export async function getJishoDefinition(word: string) {
       cache: "force-cache"
     });
     if (res.ok) {
-        const data = await res.json();
-        const found = data?.data?.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (d: any) => d.slug === word || d.japanese?.some((j: any) => j.word === word)
-        ) || data?.data?.[0];
-        
+        const data = (await res.json()) as JishoResponse;
+        const found = findBestJishoEntry(data.data ?? [], word);
+
         return { success: true, data: found };
     }
     return { success: false, error: "Jisho API response not OK" };
@@ -417,4 +424,3 @@ export async function getJishoDefinition(word: string) {
     return { success: false, error: "Failed to proxy request" };
   }
 }
-

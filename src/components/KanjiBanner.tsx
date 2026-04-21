@@ -101,6 +101,7 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
         className={cn(
           "flex flex-col items-center justify-center w-full min-h-[220px] bg-blank border-2 border-border rounded-base shadow-shadow text-center relative overflow-hidden box-border mb-6",
           containerPadding,
+          "pb-16",
         )}
       >
         <div

@@ -7,22 +7,7 @@ import { KanjiBanner } from "@/components/KanjiBanner";
 import { getWordsForKanji } from "@/app/actions/kanji";
 import { Suspense } from "react";
 import { TabPendingContent } from "@/components/TabPendingContent";
-
-type JishoJapaneseEntry = {
-  word?: string;
-  reading?: string;
-};
-
-type JishoSense = {
-  english_definitions?: string[];
-  parts_of_speech?: string[];
-};
-
-type JishoEntry = {
-  slug: string;
-  japanese?: JishoJapaneseEntry[];
-  senses?: JishoSense[];
-};
+import { findBestJishoEntry, type JishoEntry, type JishoResponse } from "@/lib/jisho";
 
 type KanjiApiEntry = {
   meanings?: string[];
@@ -55,7 +40,7 @@ async function getJishoResults(decodedWord: string): Promise<JishoEntry[]> {
       return [];
     }
 
-    const jishoData = (await res.json()) as { data?: JishoEntry[] };
+    const jishoData = (await res.json()) as JishoResponse;
     return jishoData.data ?? [];
   } catch (error) {
     console.error("Jisho API Error", error);
@@ -97,12 +82,7 @@ export default async function KanjiDetailPage({ params }: Props) {
     getJishoResults(decodedWord),
     getKanjiDetails(decodedWord, isSingleKanji),
   ]);
-  const apiEntry =
-    allResults.find(
-      (entry) =>
-        entry.slug === decodedWord ||
-        entry.japanese?.some((japaneseEntry) => japaneseEntry.word === decodedWord),
-    ) ?? allResults[0] ?? null;
+  const apiEntry = findBestJishoEntry(allResults, decodedWord);
 
   return (
     <div className="flex flex-col min-h-dvh bg-bg font-sans relative overflow-hidden pb-24">
@@ -352,6 +332,7 @@ async function WordsTabContent({
               word={userWord.word}
               isSaved={true}
               searchCount={userWord.searchCount}
+              compareSourceWord={decodedWord}
             />
           ))}
         </div>
@@ -372,6 +353,7 @@ async function WordsTabContent({
                 word={wordChar}
                 initialEntry={entry}
                 isSaved={false}
+                compareSourceWord={decodedWord}
               />
             );
           })

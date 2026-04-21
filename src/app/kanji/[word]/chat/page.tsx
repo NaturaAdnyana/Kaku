@@ -17,6 +17,7 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { BackButton } from "@/components/BackButton";
+import { useSearchParams } from "next/navigation";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -165,7 +166,10 @@ type Props = { params: Promise<{ word: string }> };
 
 export default function ChatPage({ params }: Props) {
   const { word } = use(params);
+  const searchParams = useSearchParams();
   const decodedWord = decodeURIComponent(word);
+  const compareWords = Array.from(new Set(searchParams.getAll("compare")));
+  const isCompareMode = compareWords.length > 0;
 
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -237,10 +241,12 @@ export default function ChatPage({ params }: Props) {
     if (!hasStartedRef.current && messages.length === 0) {
       hasStartedRef.current = true;
       sendMessage({
-        text: `I'm learning the word/kanji "${decodedWord}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`,
+        text: isCompareMode
+          ? `I'm learning the word/kanji "${decodedWord}". Please compare these related words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
+          : `I'm learning the word/kanji "${decodedWord}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`,
       });
     }
-  }, [decodedWord, messages.length, sendMessage]);
+  }, [compareWords, decodedWord, isCompareMode, messages.length, sendMessage]);
 
   // ── Auto-grow textarea ───────────────────────────────────────────────────
   useEffect(() => {
@@ -279,7 +285,18 @@ export default function ChatPage({ params }: Props) {
           <div className="flex flex-col items-center min-w-0 px-2">
             <h1 className="text-base font-bold truncate">Koijo — AI Sensei</h1>
             <span className="text-xs text-muted-foreground font-medium">
-              Topic: <strong className="text-foreground">{decodedWord}</strong>
+              {isCompareMode ? (
+                <>
+                  Compare:{" "}
+                  <strong className="text-foreground">
+                    {compareWords.length} words
+                  </strong>
+                </>
+              ) : (
+                <>
+                  Topic: <strong className="text-foreground">{decodedWord}</strong>
+                </>
+              )}
             </span>
           </div>
           <div className="w-10 shrink-0" />

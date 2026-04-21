@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -11,11 +11,42 @@ import {
   PenLine,
   Repeat2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { OwlLogo } from "@/components/OwlLogo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+
+const INSTALL_TOAST_ID = "install-app-hint";
+const INSTALL_TOAST_SESSION_KEY = "install-app-hint-shown";
+const MOBILE_DEVICE_PATTERN = /Android|iPhone|iPad|iPod/i;
+
+function isInstalledDisplayMode() {
+  if (typeof window === "undefined") return false;
+
+  const standaloneNavigator = navigator as Navigator & {
+    standalone?: boolean;
+  };
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    standaloneNavigator.standalone === true
+  );
+}
+
+function shouldShowInstallToast() {
+  if (typeof window === "undefined") return false;
+
+  const isCompactTouchDevice =
+    navigator.maxTouchPoints > 1 &&
+    window.matchMedia("(max-width: 820px)").matches;
+  const isMobileBrowser =
+    MOBILE_DEVICE_PATTERN.test(navigator.userAgent) || isCompactTouchDevice;
+
+  return isMobileBrowser && !isInstalledDisplayMode();
+}
 
 const publicMethod = [
   {
@@ -125,6 +156,30 @@ function SidePanel({
 
 export default function Home() {
   const { data: sessionInfo, isPending: loading } = authClient.useSession();
+
+  useEffect(() => {
+    if (loading || !shouldShowInstallToast()) return;
+    if (sessionStorage.getItem(INSTALL_TOAST_SESSION_KEY) === "1") return;
+
+    const timer = window.setTimeout(() => {
+      sessionStorage.setItem(INSTALL_TOAST_SESSION_KEY, "1");
+      toast("Install Kaku on this device", {
+        id: INSTALL_TOAST_ID,
+        duration: 9000,
+        description:
+          "Open the browser menu and choose Add to Home Screen or Install App.",
+      });
+    }, 1200);
+
+    const handleInstalled = () => toast.dismiss(INSTALL_TOAST_ID);
+
+    window.addEventListener("appinstalled", handleInstalled);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, [loading]);
 
   if (loading) {
     return (
