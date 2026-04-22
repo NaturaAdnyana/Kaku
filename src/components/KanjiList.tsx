@@ -378,7 +378,7 @@ function SavedListCard({
   );
 }
 
-function SavedWordListCard({
+function WordListRowCard({
   item,
   onDelete,
   itemRef,
@@ -710,7 +710,7 @@ export function KanjiList({
         <div className="flex flex-col gap-3">
           {items.map((item, index) => (
             type === "word" ? (
-              <SavedWordListCard
+              <WordListRowCard
                 key={item.id}
                 item={item}
                 itemRef={index === items.length - 1 ? ref : null}
