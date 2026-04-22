@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Check, ChevronRight, ChevronUp, Eye, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import {
   getPrimaryJishoDefinition,
   getPrimaryJishoReading,
@@ -25,6 +25,7 @@ export function WordDetailCard({
   initialEntry,
   compareSourceWord,
 }: WordCardProps) {
+  const router = useRouter();
   const {
     entry,
     isExpanded,
@@ -40,10 +41,29 @@ export function WordDetailCard({
 
   const reading = getPrimaryJishoReading(entry);
   const definition = getPrimaryJishoDefinition(entry);
+  const handleCardOpen = () => {
+    router.push(`/kanji/${encodeURIComponent(word)}`);
+  };
 
   return (
-    <div className="p-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base flex flex-col gap-3 transition-all relative w-full overflow-hidden">
-      <div className="flex items-center gap-3 md:gap-4">
+    <div
+      role="link"
+      tabIndex={0}
+      className="group relative flex w-full cursor-pointer flex-col gap-3 rounded-base border-2 border-border bg-blank p-3 pr-12 shadow-[4px_4px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+      onClick={handleCardOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleCardOpen();
+        }
+      }}
+    >
+      <ChevronRight
+        size={18}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-foreground/60 transition-transform group-hover:translate-x-0.5"
+        aria-hidden="true"
+      />
+      <div className="flex items-start gap-3 md:gap-4">
         {/* Word Container: Plain for Saved, Boxed for Dictionary */}
         <div
           className={cn(
@@ -56,36 +76,15 @@ export function WordDetailCard({
         </div>
 
         {/* Center content container carefully scaled to prevent flex overflow */}
-        <div className="flex flex-col flex-1 min-w-0 justify-center overflow-hidden">
-          {!isSaved && entry ? (
-            <>
-              {reading && (
-                <span className="text-xs text-foreground font-bold font-jp truncate">
-                  {reading}
-                </span>
-              )}
-              {definition && (
-                <p className="text-sm text-foreground/80 font-medium mt-0.5 truncate w-full">
-                  {definition}
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              {searchCount && searchCount > 1 && (
-                <span className="px-1.5 py-0.5 bg-secondary text-foreground text-[10px] font-bold border-2 border-border rounded-sm whitespace-nowrap">
-                  Hits: {searchCount}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Buttons strictly pinned to the right */}
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {compareSourceWord && (
             <button
-              onClick={toggleCompare}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleCompare();
+              }}
               className={cn(
                 "flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border rounded-base text-foreground transition-all cursor-pointer shrink-0 group",
                 isCompareSelected
@@ -109,7 +108,11 @@ export function WordDetailCard({
 
           {isSaved && (
             <button
-              onClick={toggleExpanded}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleExpanded();
+              }}
               disabled={isFetching}
               className="flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border bg-secondary shadow-[2px_2px_0_var(--border)] rounded-base text-foreground hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer active:bg-main active:text-main-foreground shrink-0 group"
               aria-label={isExpanded ? "Hide meaning" : "Reveal meaning"}
@@ -133,15 +136,32 @@ export function WordDetailCard({
               )}
             </button>
           )}
-
-          <Link
-            href={`/kanji/${encodeURIComponent(word)}`}
-            className="p-1.5 md:p-2 border-2 border-border bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] rounded-base hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer flex shrink-0 items-center justify-center"
-            aria-label="Go to word details"
-          >
-            <ChevronRight size={18} />
-          </Link>
         </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col justify-center overflow-hidden">
+        {!isSaved && entry ? (
+          <>
+            {reading && (
+              <span className="text-xs text-foreground font-bold font-jp truncate">
+                {reading}
+              </span>
+            )}
+            {definition && (
+              <p className="mt-0.5 w-full truncate text-sm font-medium text-foreground/80">
+                {definition}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {searchCount && searchCount > 1 && (
+              <span className="whitespace-nowrap rounded-sm border-2 border-border bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-foreground">
+                Hits: {searchCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Spilled Meaning Dropdown */}
