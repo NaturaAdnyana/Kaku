@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Check, ChevronRight, ChevronUp, Eye, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCompareWords } from "@/components/CompareWordsProvider";
 import {
   getPrimaryJishoDefinition,
   getPrimaryJishoReading,
   type JishoEntry,
 } from "@/lib/jisho";
-
-import { getJishoDefinition } from "@/app/actions/kanji";
+import { useSavedWordCardInteractions } from "@/components/useSavedWordCardInteractions";
 
 type WordCardProps = {
   word: string;
@@ -28,35 +25,21 @@ export function WordDetailCard({
   initialEntry,
   compareSourceWord,
 }: WordCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [entry, setEntry] = useState<JishoEntry | null>(initialEntry ?? null);
-  const { isSelected, toggleWord } = useCompareWords();
+  const {
+    entry,
+    isExpanded,
+    isFetching,
+    isCompareSelected,
+    toggleExpanded,
+    toggleCompare,
+  } = useSavedWordCardInteractions({
+    word,
+    compareSourceWord,
+    initialEntry,
+  });
 
   const reading = getPrimaryJishoReading(entry);
   const definition = getPrimaryJishoDefinition(entry);
-  const isCompareSelected =
-    compareSourceWord !== undefined && isSelected(word, compareSourceWord);
-
-  const fetchMeaning = async () => {
-    if (entry) {
-      setIsExpanded(!isExpanded);
-      return;
-    }
-
-    setIsFetching(true);
-    try {
-      const res = await getJishoDefinition(word);
-      if (res.success && res.data) {
-        setEntry(res.data as JishoEntry);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsFetching(false);
-      setIsExpanded(true);
-    }
-  };
 
   return (
     <div className="p-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base flex flex-col gap-3 transition-all relative w-full overflow-hidden">
@@ -102,7 +85,7 @@ export function WordDetailCard({
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {compareSourceWord && (
             <button
-              onClick={() => toggleWord(word, compareSourceWord)}
+              onClick={toggleCompare}
               className={cn(
                 "flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border rounded-base text-foreground transition-all cursor-pointer shrink-0 group",
                 isCompareSelected
@@ -126,7 +109,7 @@ export function WordDetailCard({
 
           {isSaved && (
             <button
-              onClick={fetchMeaning}
+              onClick={toggleExpanded}
               disabled={isFetching}
               className="flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border bg-secondary shadow-[2px_2px_0_var(--border)] rounded-base text-foreground hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer active:bg-main active:text-main-foreground shrink-0 group"
               aria-label={isExpanded ? "Hide meaning" : "Reveal meaning"}
