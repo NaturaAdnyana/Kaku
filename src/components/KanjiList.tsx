@@ -35,7 +35,6 @@ import {
 import { cn, getSearchCountColor } from "@/lib/utils";
 import { useInView } from "react-intersection-observer";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -47,6 +46,7 @@ import {
   getPrimaryJishoReading,
 } from "@/lib/jisho";
 import { useSavedWordCardInteractions } from "@/components/useSavedWordCardInteractions";
+import { useCompareWords } from "@/components/CompareWordsProvider";
 
 type SavedListItem = {
   id: string;
@@ -378,15 +378,19 @@ function SavedListCard({
   );
 }
 
-function SavedWordListCard({
+function WordListRowCard({
   item,
+  onOpen,
   onDelete,
   itemRef,
 }: {
   item: SavedListItem;
+  onOpen: (character: string) => void;
   onDelete: (event: React.MouseEvent, character: string) => void;
   itemRef?: ((node?: Element | null) => void) | null;
 }) {
+  const { sourceWord } = useCompareWords();
+  const compareSourceWord = sourceWord ?? item.character;
   const {
     entry,
     isExpanded,
@@ -396,63 +400,46 @@ function SavedWordListCard({
     toggleCompare,
   } = useSavedWordCardInteractions({
     word: item.character,
-    compareSourceWord: item.character,
+    compareSourceWord,
   });
   const reading = getPrimaryJishoReading(entry);
   const definition = getPrimaryJishoDefinition(entry);
   const updatedLabel = UPDATED_AT_FORMATTER.format(new Date(item.updatedAt));
+  const handleCardOpen = () => onOpen(item.character);
 
   return (
     <div
       ref={itemRef}
-      className="p-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base flex flex-col gap-3 transition-all relative w-full overflow-hidden"
+      role="link"
+      tabIndex={0}
+      className="group relative flex w-full cursor-pointer flex-col gap-3 rounded-base border-2 border-border bg-blank p-3 pr-12 shadow-[4px_4px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+      onClick={handleCardOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleCardOpen();
+        }
+      }}
     >
-      <div className="flex items-center gap-3 md:gap-4">
+      <ChevronRight
+        size={18}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-foreground/60 transition-transform group-hover:translate-x-0.5"
+        aria-hidden="true"
+      />
+      <div className="flex items-start gap-3 md:gap-4">
         <div className="text-2xl md:text-3xl font-bold font-jp p-2 flex shrink-0 items-center justify-center text-foreground">
           {item.character}
         </div>
 
-        <div className="flex flex-col flex-1 min-w-0 justify-center overflow-hidden">
-          {isExpanded && entry ? (
-            <>
-              {reading && (
-                <span className="text-xs text-foreground font-bold font-jp truncate">
-                  {reading}
-                </span>
-              )}
-              {definition && (
-                <p className="text-sm text-foreground/80 font-medium mt-0.5 truncate w-full">
-                  {definition}
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
-                  getSearchCountColor(item.searchCount),
-                )}
-              >
-                <Search size={12} />
-                {item.searchCount} {item.searchCount === 1 ? "search" : "searches"}
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
-                title="Last Updated"
-              >
-                <Calendar size={12} className="opacity-70" />
-                {updatedLabel}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
           <button
-            onClick={toggleCompare}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleCompare();
+            }}
             className={cn(
-              "flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border rounded-base text-foreground transition-all cursor-pointer shrink-0 group",
+              "group flex shrink-0 cursor-pointer items-center gap-2 rounded-base border-2 border-border p-1.5 px-2 text-foreground transition-all sm:px-3 md:p-2 md:px-4",
               isCompareSelected
                 ? "bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
                 : "bg-secondary shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none",
@@ -470,9 +457,13 @@ function SavedWordListCard({
           </button>
 
           <button
-            onClick={toggleExpanded}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleExpanded();
+            }}
             disabled={isFetching}
-            className="flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border bg-secondary shadow-[2px_2px_0_var(--border)] rounded-base text-foreground hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer active:bg-main active:text-main-foreground shrink-0 group"
+            className="group flex shrink-0 cursor-pointer items-center gap-2 rounded-base border-2 border-border bg-secondary p-1.5 px-2 text-foreground shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:bg-main active:text-main-foreground sm:px-3 md:p-2 md:px-4"
             aria-label={isExpanded ? "Hide meaning" : "Reveal meaning"}
           >
             {isFetching ? (
@@ -494,14 +485,6 @@ function SavedWordListCard({
             )}
           </button>
 
-          <Link
-            href={`/kanji/${encodeURIComponent(item.character)}`}
-            className="p-1.5 md:p-2 border-2 border-border bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] rounded-base hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer flex shrink-0 items-center justify-center"
-            aria-label="Go to word details"
-          >
-            <ChevronRight size={18} />
-          </Link>
-
           <button
             onClick={(event) => onDelete(event, item.character)}
             className="group/btn z-20 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-border bg-danger p-2.5 font-bold text-white shadow-shadow transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
@@ -514,6 +497,42 @@ function SavedWordListCard({
             />
           </button>
         </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col justify-center overflow-hidden">
+        {isExpanded && entry ? (
+          <>
+            {reading && (
+              <span className="text-xs text-foreground font-bold font-jp truncate">
+                {reading}
+              </span>
+            )}
+            {definition && (
+              <p className="mt-0.5 w-full truncate text-sm font-medium text-foreground/80">
+                {definition}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
+                getSearchCountColor(item.searchCount),
+              )}
+            >
+              <Search size={12} />
+              {item.searchCount} {item.searchCount === 1 ? "search" : "searches"}
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
+              title="Last Updated"
+            >
+              <Calendar size={12} className="opacity-70" />
+              {updatedLabel}
+            </span>
+          </div>
+        )}
       </div>
 
       {isExpanded && entry && (
@@ -710,10 +729,11 @@ export function KanjiList({
         <div className="flex flex-col gap-3">
           {items.map((item, index) => (
             type === "word" ? (
-              <SavedWordListCard
+              <WordListRowCard
                 key={item.id}
                 item={item}
                 itemRef={index === items.length - 1 ? ref : null}
+                onOpen={handleOpenItem}
                 onDelete={handleDeleteClick}
               />
             ) : (
