@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { Check, ChevronRight, ChevronUp, Eye, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { JishoEntry } from "@/lib/jisho";
-import { useWordCardBehavior } from "@/components/useWordCardBehavior";
+import {
+  getPrimaryJishoDefinition,
+  getPrimaryJishoReading,
+  type JishoEntry,
+} from "@/lib/jisho";
+import { useSavedWordCardInteractions } from "@/components/useSavedWordCardInteractions";
 
 type WordCardProps = {
   word: string;
@@ -22,20 +26,20 @@ export function WordDetailCard({
   compareSourceWord,
 }: WordCardProps) {
   const {
-    definition,
     entry,
-    isCompareSelected,
     isExpanded,
     isFetching,
-    reading,
+    isCompareSelected,
+    toggleExpanded,
     toggleCompare,
-    toggleReveal,
-  } = useWordCardBehavior({
+  } = useSavedWordCardInteractions({
     word,
-    initialEntry,
     compareSourceWord,
-    allowReveal: Boolean(isSaved),
+    initialEntry,
   });
+
+  const reading = getPrimaryJishoReading(entry);
+  const definition = getPrimaryJishoDefinition(entry);
 
   return (
     <div className="p-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base flex flex-col gap-3 transition-all relative w-full overflow-hidden">
@@ -105,7 +109,7 @@ export function WordDetailCard({
 
           {isSaved && (
             <button
-              onClick={toggleReveal}
+              onClick={toggleExpanded}
               disabled={isFetching}
               className="flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border bg-secondary shadow-[2px_2px_0_var(--border)] rounded-base text-foreground hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer active:bg-main active:text-main-foreground shrink-0 group"
               aria-label={isExpanded ? "Hide meaning" : "Reveal meaning"}

@@ -9,8 +9,13 @@ import {
 import { getKanjiList, getWordList, deleteWord } from "@/app/actions/kanji";
 import {
   ArrowDownAZ,
+  Check,
   Calendar,
+  ChevronRight,
+  ChevronUp,
+  Eye,
   Loader2,
+  Scale,
   Search,
   Trash2,
   X,
@@ -30,13 +35,18 @@ import {
 import { cn, getSearchCountColor } from "@/lib/utils";
 import { useInView } from "react-intersection-observer";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { WordListRowCard } from "@/components/WordListRowCard";
+import {
+  getPrimaryJishoDefinition,
+  getPrimaryJishoReading,
+} from "@/lib/jisho";
+import { useSavedWordCardInteractions } from "@/components/useSavedWordCardInteractions";
 
 type SavedListItem = {
   id: string;
@@ -286,6 +296,9 @@ function SavedListCard({
 }) {
   const itemLength = Array.from(item.character).length;
   const updatedLabel = UPDATED_AT_FORMATTER.format(new Date(item.updatedAt));
+  const searchLabel = `${item.searchCount} ${
+    item.searchCount === 1 ? "search" : "searches"
+  }`;
 
   if (type === "word") {
     return (
@@ -336,10 +349,11 @@ function SavedListCard({
                 "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
                 getSearchCountColor(item.searchCount),
               )}
+              title={searchLabel}
+              aria-label={searchLabel}
             >
               <Search size={12} />
-              {item.searchCount}{" "}
-              {item.searchCount === 1 ? "search" : "searches"}
+              {item.searchCount}
             </span>
             <span
               className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
@@ -373,6 +387,167 @@ function SavedListCard({
           />
         </button>
       </div>
+    </div>
+  );
+}
+
+function SavedWordListCard({
+  item,
+  onDelete,
+  itemRef,
+}: {
+  item: SavedListItem;
+  onDelete: (event: React.MouseEvent, character: string) => void;
+  itemRef?: ((node?: Element | null) => void) | null;
+}) {
+  const {
+    entry,
+    isExpanded,
+    isFetching,
+    isCompareSelected,
+    toggleExpanded,
+    toggleCompare,
+  } = useSavedWordCardInteractions({
+    word: item.character,
+    compareSourceWord: item.character,
+  });
+  const reading = getPrimaryJishoReading(entry);
+  const definition = getPrimaryJishoDefinition(entry);
+  const updatedLabel = UPDATED_AT_FORMATTER.format(new Date(item.updatedAt));
+
+  return (
+    <div
+      ref={itemRef}
+      className="p-3 bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] rounded-base flex flex-col gap-3 transition-all relative w-full overflow-hidden"
+    >
+      <div className="flex items-center gap-3 md:gap-4">
+        <div className="text-2xl md:text-3xl font-bold font-jp p-2 flex shrink-0 items-center justify-center text-foreground">
+          {item.character}
+        </div>
+
+        <div className="flex flex-col flex-1 min-w-0 justify-center overflow-hidden">
+          {isExpanded && entry ? (
+            <>
+              {reading && (
+                <span className="text-xs text-foreground font-bold font-jp truncate">
+                  {reading}
+                </span>
+              )}
+              {definition && (
+                <p className="text-sm text-foreground/80 font-medium mt-0.5 truncate w-full">
+                  {definition}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
+                  getSearchCountColor(item.searchCount),
+                )}
+              >
+                <Search size={12} />
+                {item.searchCount} {item.searchCount === 1 ? "search" : "searches"}
+              </span>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
+                title="Last Updated"
+              >
+                <Calendar size={12} className="opacity-70" />
+                {updatedLabel}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <button
+            onClick={toggleCompare}
+            className={cn(
+              "flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border rounded-base text-foreground transition-all cursor-pointer shrink-0 group",
+              isCompareSelected
+                ? "bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                : "bg-secondary shadow-[2px_2px_0_var(--border)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none",
+            )}
+            aria-label={isCompareSelected ? "Remove from compare" : "Add to compare"}
+          >
+            <span className="text-[10px] uppercase font-bold tracking-widest hidden sm:block">
+              {isCompareSelected ? "Added" : "Compare"}
+            </span>
+            {isCompareSelected ? (
+              <Check size={18} className="group-active:text-main-foreground" />
+            ) : (
+              <Scale size={18} className="group-active:text-main-foreground" />
+            )}
+          </button>
+
+          <button
+            onClick={toggleExpanded}
+            disabled={isFetching}
+            className="flex items-center gap-2 p-1.5 px-3 md:p-2 md:px-4 border-2 border-border bg-secondary shadow-[2px_2px_0_var(--border)] rounded-base text-foreground hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer active:bg-main active:text-main-foreground shrink-0 group"
+            aria-label={isExpanded ? "Hide meaning" : "Reveal meaning"}
+          >
+            {isFetching ? (
+              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : isExpanded ? (
+              <>
+                <span className="text-[10px] uppercase font-bold tracking-widest hidden sm:block">
+                  Hide
+                </span>
+                <ChevronUp size={18} className="group-active:text-main-foreground" />
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] uppercase font-bold tracking-widest hidden sm:block">
+                  Reveal
+                </span>
+                <Eye size={18} className="group-active:text-main-foreground" />
+              </>
+            )}
+          </button>
+
+          <Link
+            href={`/kanji/${encodeURIComponent(item.character)}`}
+            className="p-1.5 md:p-2 border-2 border-border bg-main text-main-foreground shadow-[2px_2px_0_var(--border)] rounded-base hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer flex shrink-0 items-center justify-center"
+            aria-label="Go to word details"
+          >
+            <ChevronRight size={18} />
+          </Link>
+
+          <button
+            onClick={(event) => onDelete(event, item.character)}
+            className="group/btn z-20 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-border bg-danger p-2.5 font-bold text-white shadow-shadow transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+            title="Delete"
+            aria-label={`Delete ${item.character}`}
+          >
+            <Trash2
+              size={15}
+              className="transition-transform group-hover/btn:scale-110"
+            />
+          </button>
+        </div>
+      </div>
+
+      {isExpanded && entry && (
+        <div className="pt-3 border-t-2 border-border/50 animate-in fade-in slide-in-from-top-2 flex flex-col gap-1.5">
+          {reading && (
+            <span className="text-xs text-foreground font-bold font-jp">
+              {reading}
+            </span>
+          )}
+          {definition && (
+            <p className="text-sm text-foreground/90 font-medium break-words whitespace-normal">
+              {definition}
+            </p>
+          )}
+        </div>
+      )}
+      {isExpanded && !entry && !isFetching && (
+        <div className="pt-3 border-t-2 border-border/50 animate-in fade-in slide-in-from-top-2">
+          <p className="text-sm text-muted-foreground italic">No definition found.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -547,14 +722,23 @@ export function KanjiList({
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((item, index) => (
-            <SavedListCard
-              key={item.id}
-              item={item}
-              type={type}
-              itemRef={index === items.length - 1 ? ref : null}
-              onOpen={handleOpenItem}
-              onDelete={handleDeleteClick}
-            />
+            type === "word" ? (
+              <SavedWordListCard
+                key={item.id}
+                item={item}
+                itemRef={index === items.length - 1 ? ref : null}
+                onDelete={handleDeleteClick}
+              />
+            ) : (
+              <SavedListCard
+                key={item.id}
+                item={item}
+                type={type}
+                itemRef={index === items.length - 1 ? ref : null}
+                onOpen={handleOpenItem}
+                onDelete={handleDeleteClick}
+              />
+            )
           ))}
         </div>
       )}
