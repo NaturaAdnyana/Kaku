@@ -431,7 +431,7 @@ function WordListRowCard({
           {item.character}
         </div>
 
-        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             onClick={(event) => {
               event.preventDefault();
