@@ -296,6 +296,9 @@ function SavedListCard({
 }) {
   const itemLength = Array.from(item.character).length;
   const updatedLabel = UPDATED_AT_FORMATTER.format(new Date(item.updatedAt));
+  const searchLabel = `${item.searchCount} ${
+    item.searchCount === 1 ? "search" : "searches"
+  }`;
 
   return (
     <div
@@ -333,10 +336,11 @@ function SavedListCard({
                 "inline-flex items-center gap-1.5 rounded-base border-2 border-border px-3 py-1 text-xs font-bold",
                 getSearchCountColor(item.searchCount),
               )}
+              title={searchLabel}
+              aria-label={searchLabel}
             >
               <Search size={12} />
-              {item.searchCount}{" "}
-              {item.searchCount === 1 ? "search" : "searches"}
+              {item.searchCount}
             </span>
             <span
               className="inline-flex items-center gap-1.5 rounded-base border-2 border-border bg-secondary px-3 py-1 text-xs font-bold text-foreground"
