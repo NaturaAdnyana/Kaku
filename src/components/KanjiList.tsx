@@ -36,6 +36,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { WordListRowCard } from "@/components/WordListRowCard";
 
 type SavedListItem = {
   id: string;
@@ -285,6 +286,19 @@ function SavedListCard({
 }) {
   const itemLength = Array.from(item.character).length;
   const updatedLabel = UPDATED_AT_FORMATTER.format(new Date(item.updatedAt));
+
+  if (type === "word") {
+    return (
+      <WordListRowCard
+        word={item.character}
+        searchCount={item.searchCount}
+        updatedLabel={updatedLabel}
+        onOpen={onOpen}
+        onDelete={onDelete}
+        itemRef={itemRef}
+      />
+    );
+  }
 
   return (
     <div
