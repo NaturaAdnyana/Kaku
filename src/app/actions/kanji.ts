@@ -8,6 +8,15 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+export type KanjiApiDetails = {
+  meanings?: string[];
+  jlpt: number | null;
+  grade: number | null;
+  stroke_count: number | null;
+  kun_readings?: string[];
+  on_readings?: string[];
+};
+
 export async function saveWord(text: string) {
   try {
     const session = await auth.api.getSession({
@@ -422,5 +431,25 @@ export async function getJishoDefinition(word: string) {
   } catch (error) {
     console.error("Jisho proxy error:", error);
     return { success: false, error: "Failed to proxy request" };
+  }
+}
+
+export async function getKanjiApiDetails(
+  character: string,
+): Promise<{ success: boolean; data?: KanjiApiDetails | null; error?: string }> {
+  try {
+    const res = await fetch(
+      `https://kanjiapi.dev/v1/kanji/${encodeURIComponent(character)}`,
+      { cache: "force-cache" },
+    );
+
+    if (!res.ok) {
+      return { success: false, error: "Kanji API response not OK" };
+    }
+
+    return { success: true, data: (await res.json()) as KanjiApiDetails };
+  } catch (error) {
+    console.error("Kanji API proxy error:", error);
+    return { success: false, error: "Failed to proxy kanji request" };
   }
 }

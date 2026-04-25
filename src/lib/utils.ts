@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getSearchCountColor(count: number) {
   if (count < 3) {
-    return "bg-secondary text-foreground";
+    return "bg-blank text-foreground";
   }
   if (count < 5) {
     return "bg-main text-main-foreground";

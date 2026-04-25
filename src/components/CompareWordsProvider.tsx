@@ -10,11 +10,20 @@ import {
 } from "react";
 import { toast } from "sonner";
 
+export type CompareWordsContextMode = "detail" | "list";
+
+export type CompareWordsScope = {
+  key: string;
+  pagePath: string;
+  routeWord: string;
+  context?: CompareWordsContextMode;
+};
+
 type CompareWordsContextValue = {
-  sourceWord: string | null;
+  compareScope: CompareWordsScope | null;
   selectedWords: string[];
-  isSelected: (word: string, sourceWord: string) => boolean;
-  toggleWord: (word: string, sourceWord: string) => void;
+  isSelected: (word: string, scopeKey: string) => boolean;
+  toggleWord: (word: string, scope: CompareWordsScope) => void;
   clearCompare: () => void;
 };
 
@@ -24,51 +33,70 @@ const CompareWordsContext = createContext<CompareWordsContextValue | undefined>(
   undefined,
 );
 
+type CompareWordsState = {
+  compareScope: CompareWordsScope | null;
+  selectedWords: string[];
+};
+
 export function CompareWordsProvider({ children }: { children: ReactNode }) {
-  const [sourceWord, setSourceWord] = useState<string | null>(null);
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [compareState, setCompareState] = useState<CompareWordsState>({
+    compareScope: null,
+    selectedWords: [],
+  });
 
   const clearCompare = useCallback(() => {
-    setSourceWord(null);
-    setSelectedWords([]);
+    setCompareState({
+      compareScope: null,
+      selectedWords: [],
+    });
   }, []);
 
   const toggleWord = useCallback(
-    (word: string, nextSourceWord: string) => {
-      const baseWords =
-        sourceWord === nextSourceWord ? selectedWords : [];
-      const isAlreadySelected = baseWords.includes(word);
+    (word: string, nextScope: CompareWordsScope) => {
+      setCompareState((current) => {
+        const isSameScope = current.compareScope?.key === nextScope.key;
+        const baseWords = isSameScope ? current.selectedWords : [];
+        const isAlreadySelected = baseWords.includes(word);
 
-      if (isAlreadySelected) {
-        const remainingWords = baseWords.filter(
-          (currentWord) => currentWord !== word,
-        );
-        setSelectedWords(remainingWords);
-        setSourceWord(remainingWords.length > 0 ? nextSourceWord : null);
-        return;
-      }
+        if (isAlreadySelected) {
+          const remainingWords = baseWords.filter(
+            (currentWord) => currentWord !== word,
+          );
 
-      if (baseWords.length >= MAX_COMPARE_WORDS) {
-        toast.error(`You can compare up to ${MAX_COMPARE_WORDS} words at once.`);
-        return;
-      }
+          return {
+            compareScope:
+              remainingWords.length > 0 ? current.compareScope : null,
+            selectedWords: remainingWords,
+          };
+        }
 
-      setSelectedWords([...baseWords, word]);
-      setSourceWord(nextSourceWord);
+        if (baseWords.length >= MAX_COMPARE_WORDS) {
+          toast.error(
+            `You can compare up to ${MAX_COMPARE_WORDS} words at once.`,
+          );
+          return current;
+        }
+
+        return {
+          compareScope: isSameScope ? current.compareScope : nextScope,
+          selectedWords: [...baseWords, word],
+        };
+      });
     },
-    [selectedWords, sourceWord],
+    [],
   );
 
   const value = useMemo<CompareWordsContextValue>(
     () => ({
-      sourceWord,
-      selectedWords,
-      isSelected: (word: string, currentSourceWord: string) =>
-        sourceWord === currentSourceWord && selectedWords.includes(word),
+      compareScope: compareState.compareScope,
+      selectedWords: compareState.selectedWords,
+      isSelected: (word: string, scopeKey: string) =>
+        compareState.compareScope?.key === scopeKey &&
+        compareState.selectedWords.includes(word),
       toggleWord,
       clearCompare,
     }),
-    [clearCompare, selectedWords, sourceWord, toggleWord],
+    [clearCompare, compareState, toggleWord],
   );
 
   return (

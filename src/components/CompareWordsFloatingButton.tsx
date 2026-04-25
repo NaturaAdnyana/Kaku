@@ -1,31 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ArrowRight, Scale } from "lucide-react";
 
 import { useCompareWords } from "@/components/CompareWordsProvider";
 import { cn } from "@/lib/utils";
 
-function buildCompareHref(sourceWord: string, selectedWords: string[]) {
+function buildCompareHref(
+  routeWord: string,
+  selectedWords: string[],
+  context: "detail" | "list" = "detail",
+) {
   const params = new URLSearchParams();
   selectedWords.forEach((word) => {
     params.append("compare", word);
   });
+  if (context === "list") {
+    params.set("compareContext", "list");
+  }
 
-  return `/kanji/${encodeURIComponent(sourceWord)}/chat?${params.toString()}`;
+  return `/kanji/${encodeURIComponent(routeWord)}/chat?${params.toString()}`;
 }
 
 export function CompareWordsFloatingButton() {
   const pathname = usePathname();
-  const { sourceWord, selectedWords, clearCompare } = useCompareWords();
+  const searchParams = useSearchParams();
+  const { compareScope, selectedWords, clearCompare } = useCompareWords();
 
-  if (!sourceWord || selectedWords.length === 0) {
+  if (!compareScope || selectedWords.length === 0) {
     return null;
   }
 
-  const sourcePath = `/kanji/${encodeURIComponent(sourceWord)}`;
-  if (pathname !== sourcePath) {
+  if (pathname !== compareScope.pagePath) {
+    return null;
+  }
+
+  if (
+    compareScope.context === "list" &&
+    (searchParams.get("tab") ?? "words") !== "words"
+  ) {
     return null;
   }
 
@@ -33,12 +47,18 @@ export function CompareWordsFloatingButton() {
   const helperText = canCompare
     ? selectedWords.join(" · ")
     : "Pick one more word to compare";
+  const compareRouteWord =
+    compareScope.context === "list" ? selectedWords[0] : compareScope.routeWord;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[55] flex justify-center px-4 sm:bottom-28">
       <div className="pointer-events-auto">
         <Link
-          href={buildCompareHref(sourceWord, selectedWords)}
+          href={buildCompareHref(
+            compareRouteWord,
+            selectedWords,
+            compareScope.context ?? "detail",
+          )}
           onClick={(event) => {
             if (!canCompare) {
               event.preventDefault();

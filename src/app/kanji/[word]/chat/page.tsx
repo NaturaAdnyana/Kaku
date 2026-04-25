@@ -9,6 +9,7 @@ import {
   use,
   useState,
   useCallback,
+  useMemo,
   memo,
   ReactNode,
 } from "react";
@@ -168,8 +169,13 @@ export default function ChatPage({ params }: Props) {
   const { word } = use(params);
   const searchParams = useSearchParams();
   const decodedWord = decodeURIComponent(word);
-  const compareWords = Array.from(new Set(searchParams.getAll("compare")));
+  const compareWords = useMemo(
+    () => Array.from(new Set(searchParams.getAll("compare"))),
+    [searchParams],
+  );
+  const compareContext = searchParams.get("compareContext");
   const isCompareMode = compareWords.length > 0;
+  const isSavedListCompare = compareContext === "list";
 
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -242,11 +248,20 @@ export default function ChatPage({ params }: Props) {
       hasStartedRef.current = true;
       sendMessage({
         text: isCompareMode
-          ? `I'm learning the word/kanji "${decodedWord}". Please compare these related words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
+          ? isSavedListCompare
+            ? `Please compare these selected saved Japanese words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
+            : `I'm learning the word/kanji "${decodedWord}". Please compare these related words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
           : `I'm learning the word/kanji "${decodedWord}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`,
       });
     }
-  }, [compareWords, decodedWord, isCompareMode, messages.length, sendMessage]);
+  }, [
+    compareWords,
+    decodedWord,
+    isCompareMode,
+    isSavedListCompare,
+    messages.length,
+    sendMessage,
+  ]);
 
   // ── Auto-grow textarea ───────────────────────────────────────────────────
   useEffect(() => {
@@ -287,7 +302,7 @@ export default function ChatPage({ params }: Props) {
             <span className="text-xs text-muted-foreground font-medium">
               {isCompareMode ? (
                 <>
-                  Compare:{" "}
+                  {isSavedListCompare ? "Saved Compare:" : "Compare:"}{" "}
                   <strong className="text-foreground">
                     {compareWords.length} words
                   </strong>
