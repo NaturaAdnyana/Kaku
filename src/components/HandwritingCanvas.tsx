@@ -24,10 +24,12 @@ import { toast } from "sonner";
 
 const CUSTOM_SEARCH_TOAST_PROPS = {
   unstyled: true,
-  className: "!w-auto !max-w-none !border-0 !bg-transparent !p-0 !shadow-none",
+  className:
+    "!left-1/2 !right-auto !w-auto !max-w-none !border-0 !bg-transparent !p-0 !shadow-none",
   style: {
     width: "auto",
     maxWidth: "none",
+    translate: "-50% 0",
     background: "transparent",
     border: "0",
     padding: "0",

@@ -1,7 +1,9 @@
 "use client";
 
-import { Flame, Loader2, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
+import { LottiePlayer } from "@/components/LottieCanvas";
+import { useLottieAnimation } from "@/hooks/useLottieAnimation";
 import { cn } from "@/lib/utils";
 
 type BaseSearchToastCardProps = {
@@ -15,7 +17,7 @@ export function SearchAnalysisToastCard({
   description,
 }: BaseSearchToastCardProps) {
   return (
-    <div className="w-[352px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="w-[300px] max-w-[calc(100vw-80px)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl sm:w-[320px] sm:max-w-[calc(100vw-24px)] dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-start gap-3 p-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
           <Loader2 className="h-5 w-5 animate-spin text-zinc-500 dark:text-zinc-400" />
@@ -43,21 +45,29 @@ export function SearchResultToastCard({
   duration: number;
   level: number;
 }) {
+  const animationLevel = Math.min(Math.max(level, 1), 4);
+  const { animationData } = useLottieAnimation(`level${animationLevel}.json`);
+
   return (
-    <div className="w-[352px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="w-[300px] max-w-[calc(100vw-80px)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl sm:w-[320px] sm:max-w-[calc(100vw-24px)] dark:border-zinc-800 dark:bg-zinc-950">
       <div className="relative flex items-start gap-3 p-4 pr-12">
         <div
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border",
+            "flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border",
             level >= 4
               ? "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
               : "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
           )}
+          aria-label={`Search level ${animationLevel}`}
         >
-          {level >= 4 ? (
-            <Flame className="h-5 w-5" />
+          {animationData ? (
+            <LottiePlayer
+              animationData={animationData}
+              loop={false}
+              className="h-12 w-12"
+            />
           ) : (
-            <span className="text-base font-bold">{level}</span>
+            <span className="text-base font-bold">{animationLevel}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">

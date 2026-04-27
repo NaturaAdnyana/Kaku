@@ -63,6 +63,7 @@ export function SavedListItemCard({
         word={item.character}
         isSaved
         searchCount={item.searchCount}
+        savedDate={formatLocalIsoDate(item.updatedAt)}
         compareSourceWord={isWordList ? item.character : undefined}
         compareScopeKey={isWordList ? "saved-word-list" : undefined}
         comparePagePath={isWordList ? "/list" : undefined}

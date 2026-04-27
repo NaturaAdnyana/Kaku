@@ -17,7 +17,7 @@ export function WordBadge({
     return (
       <span
         className={cn(
-          "min-w-0 max-w-[50%] shrink-0 truncate font-jp font-black leading-none text-foreground",
+          "flex min-h-12 shrink-0 items-center whitespace-nowrap px-1 py-2 font-jp font-black leading-none text-foreground",
           wordLength > 5 ? "text-xl" : wordLength > 2 ? "text-2xl" : "text-3xl",
         )}
       >
@@ -27,25 +27,19 @@ export function WordBadge({
   }
 
   return (
-    <div
+    <span
       className={cn(
-        "flex min-h-12 min-w-12 max-w-[44%] shrink-0 -rotate-1 items-center justify-center rounded-base border-2 border-border px-3 py-2 font-jp font-black leading-none shadow-[2px_2px_0_var(--border)] transition-transform group-hover/card:rotate-0 md:min-h-14 md:min-w-14",
-        isSaved ? "bg-main text-main-foreground" : "bg-secondary text-foreground",
+        "flex min-h-12 min-w-12 max-w-[44%] shrink-0 items-center break-words px-1 py-2 font-jp font-black leading-none md:min-h-14 md:min-w-14",
+        isSaved ? "text-main-foreground" : "text-foreground",
+        wordLength > 5
+          ? "text-lg"
+          : wordLength > 2
+            ? "text-xl md:text-2xl"
+            : "text-2xl md:text-3xl",
       )}
     >
-      <span
-        className={cn(
-          "truncate",
-          wordLength > 5
-            ? "text-lg"
-            : wordLength > 2
-              ? "text-xl md:text-2xl"
-              : "text-2xl md:text-3xl",
-        )}
-      >
-        {word}
-      </span>
-    </div>
+      {word}
+    </span>
   );
 }
 
@@ -64,14 +58,14 @@ export function WordMetadata({
 }) {
   if (!isSaved && (reading || definition)) {
     return (
-      <div className="min-w-0 rounded-base border-2 border-border bg-background px-3 py-2 shadow-[2px_2px_0_var(--border)]">
+      <div className="flex min-w-0 flex-col gap-0.5">
         {reading && (
-          <span className="block truncate font-jp text-xs font-black text-foreground">
+          <span className="truncate font-jp text-xs font-black text-foreground">
             {reading}
           </span>
         )}
         {definition && (
-          <p className="mt-1 w-full truncate text-sm font-semibold text-foreground/80">
+          <p className="w-full truncate text-sm font-semibold text-foreground/70">
             {definition}
           </p>
         )}
@@ -111,14 +105,14 @@ export function ExpandedMeaning({
 
   if (hasEntry) {
     return (
-      <div className="animate-in slide-in-from-top-2 fade-in rounded-base border-2 border-border bg-background p-3 shadow-[2px_2px_0_var(--border)]">
+      <div className="animate-in slide-in-from-top-2 fade-in flex flex-col gap-1 rounded-base border-2 border-border bg-background p-3 shadow-[2px_2px_0_var(--border)]">
         {reading && (
           <span className="font-jp text-xs font-black text-foreground">
             {reading}
           </span>
         )}
         {definition && (
-          <p className="mt-1 break-words whitespace-normal text-sm font-semibold text-foreground/90">
+          <p className="break-words whitespace-normal text-sm font-semibold text-foreground/90">
             {definition}
           </p>
         )}

@@ -138,15 +138,43 @@ export default async function KanjiDetailPage({ params }: Props) {
                 <TabsContent value="words" className="mt-0">
                   <TabPendingContent
                     skeleton={
-                      <div className="p-8 text-center font-bold text-foreground border-2 border-dashed border-border rounded-base bg-secondary shadow-shadow animate-pulse">
-                        Loading vocabulary...
+                      <div className="flex flex-col gap-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="flex w-full flex-col rounded-base border-2 border-border bg-blank shadow-shadow">
+                            <div className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
+                              <div className="h-10 w-16 shrink-0 animate-pulse rounded bg-secondary" />
+                              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                <div className="h-3.5 w-20 animate-pulse rounded bg-secondary" />
+                                <div className="h-3.5 w-32 animate-pulse rounded bg-secondary/60" />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 border-t-2 border-dashed border-border/40 px-3 py-2.5 md:px-4">
+                              <div className="h-9 w-24 animate-pulse rounded-base border-2 border-border bg-blank" />
+                              <div className="h-9 w-20 animate-pulse rounded-base border-2 border-border bg-main/40" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     }
                   >
                     <Suspense
                       fallback={
-                        <div className="p-8 text-center font-bold text-foreground border-2 border-dashed border-border rounded-base bg-secondary shadow-shadow">
-                          Loading vocabulary...
+                        <div className="flex flex-col gap-4">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="flex w-full flex-col rounded-base border-2 border-border bg-blank shadow-shadow">
+                              <div className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
+                                <div className="h-10 w-16 shrink-0 animate-pulse rounded bg-secondary" />
+                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                  <div className="h-3.5 w-20 animate-pulse rounded bg-secondary" />
+                                  <div className="h-3.5 w-32 animate-pulse rounded bg-secondary/60" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-2 border-t-2 border-dashed border-border/40 px-3 py-2.5 md:px-4">
+                                <div className="h-9 w-24 animate-pulse rounded-base border-2 border-border bg-blank" />
+                                <div className="h-9 w-20 animate-pulse rounded-base border-2 border-border bg-main/40" />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       }
                     >

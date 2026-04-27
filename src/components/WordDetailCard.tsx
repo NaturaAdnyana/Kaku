@@ -34,6 +34,7 @@ type WordCardProps = {
   word: string;
   isSaved?: boolean;
   searchCount?: number;
+  savedDate?: string;
   initialEntry?: JishoEntry | null;
   compareSourceWord?: string;
   compareScopeKey?: string;
@@ -55,6 +56,7 @@ export function WordDetailCard({
   word,
   isSaved,
   searchCount,
+  savedDate,
   initialEntry,
   compareSourceWord,
   compareScopeKey,
@@ -134,6 +136,14 @@ export function WordDetailCard({
     }
   };
 
+  const hasActions = Boolean(
+    leadingActionSlot ||
+      compareScope ||
+      showRevealButton ||
+      actionSlot ||
+      !hideDetailButton,
+  );
+
   const metadataContent = (
     <WordMetadata
       isSaved={isSaved}
@@ -143,7 +153,7 @@ export function WordDetailCard({
       metaSlot={metaSlot}
     />
   );
-  const expandedContent = (
+  const expandedContent =
     expandedSlot ?? (
       <ExpandedMeaning
         isExpanded={isExpanded}
@@ -153,75 +163,7 @@ export function WordDetailCard({
         definition={definition}
         hasEntry={entry !== null}
       />
-    )
-  );
-
-  if (isSavedListLayout) {
-    return (
-      <div
-        role={isCardClickable ? "link" : undefined}
-        tabIndex={isCardClickable ? 0 : undefined}
-        title={title}
-        onClick={onCardClick}
-        onKeyDown={handleCardKeyDown}
-        className={cn(
-          "group/card relative flex w-full flex-col gap-3 overflow-hidden rounded-base border-2 border-border bg-blank p-3 shadow-[3px_3px_0_var(--border)] transition-all sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center",
-          isCardClickable &&
-            "cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
-        )}
-      >
-        <div className="flex min-w-0 items-start gap-3 sm:items-center">
-          <WordBadge word={word} isSaved={isSaved} variant="saved-list" />
-
-          <div className="min-w-0 flex-1 overflow-hidden">{metadataContent}</div>
-        </div>
-
-        <div
-          className="flex shrink-0 items-center justify-between gap-2 border-t-2 border-border pt-3 sm:justify-end sm:border-t-0 sm:pt-0"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <div className="flex shrink-0 items-center gap-2">
-            {leadingActionSlot}
-
-            {compareScope && (
-              <CompareWordButton
-                compact
-                isSelected={isCompareSelected}
-                onClick={handleCompareToggle}
-              />
-            )}
-
-            {showRevealButton && (
-              <RevealMeaningButton
-                compact
-                isExpanded={isExpanded}
-                isFetching={isFetching}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void fetchMeaning();
-                }}
-              />
-            )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {actionSlot}
-          </div>
-        </div>
-
-        {shouldShowExpandedContent && (
-          <div
-            className="sm:col-span-2"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            {expandedContent}
-          </div>
-        )}
-      </div>
     );
-  }
 
   return (
     <div
@@ -231,55 +173,87 @@ export function WordDetailCard({
       onClick={onCardClick}
       onKeyDown={handleCardKeyDown}
       className={cn(
-        "group/card relative flex w-full flex-col gap-3 overflow-hidden rounded-base border-2 border-border bg-blank p-3 shadow-[4px_4px_0_var(--border)] transition-all",
+        "group/card relative flex w-full flex-col rounded-base border-2 border-border bg-blank shadow-shadow transition-all",
         isCardClickable &&
           "cursor-pointer hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
       )}
     >
-      <div className="absolute inset-x-0 top-0 h-2 border-b-2 border-border bg-main" />
+      {/* ── Header: Word badge + metadata ── */}
+      <div className="flex items-center gap-3 p-3 md:gap-4 md:p-4">
+        <WordBadge
+          word={word}
+          isSaved={isSaved}
+          variant={isSavedListLayout ? "saved-list" : "default"}
+        />
 
-      <div className="flex items-start gap-3 pt-2 md:gap-4">
-        <WordBadge word={word} isSaved={isSaved} variant="default" />
-
-        <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden pt-0.5">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           {metadataContent}
-        </div>
 
-        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {compareScope && (
-            <CompareWordButton
-              isSelected={isCompareSelected}
-              onClick={handleCompareToggle}
-            />
-          )}
-
-          {showRevealButton && (
-            <RevealMeaningButton
-              isExpanded={isExpanded}
-              isFetching={isFetching}
-              onClick={(event) => {
-                event.stopPropagation();
-                void fetchMeaning();
-              }}
-            />
-          )}
-
-          {actionSlot}
-
-          {!hideDetailButton && (
-            <Link
-              href={`/kanji/${encodeURIComponent(word)}`}
-              className="flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-base border-2 border-border bg-main p-1.5 text-main-foreground shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none md:p-2"
-              aria-label="Go to word details"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <ChevronRight size={18} />
-            </Link>
+          {savedDate && (
+            <span className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-base border-2 border-border bg-blank px-2.5 text-[11px] font-black leading-none text-foreground">
+              {savedDate}
+            </span>
           )}
         </div>
       </div>
 
-      {shouldShowExpandedContent && expandedContent}
+      {/* ── Action toolbar ── */}
+      {hasActions && (
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2 border-t-2 border-dashed border-border/40 px-3 py-2.5 md:px-4",
+            hideDetailButton ? "justify-end" : "justify-between",
+          )}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            {leadingActionSlot}
+
+            {compareScope && (
+              <CompareWordButton
+                isSelected={isCompareSelected}
+                onClick={handleCompareToggle}
+              />
+            )}
+
+            {showRevealButton && (
+              <RevealMeaningButton
+                isExpanded={isExpanded}
+                isFetching={isFetching}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void fetchMeaning();
+                }}
+              />
+            )}
+
+            {actionSlot}
+          </div>
+
+          {!hideDetailButton && (
+            <Link
+              href={`/kanji/${encodeURIComponent(word)}`}
+              className="group/detail flex h-9 shrink-0 items-center gap-1.5 rounded-base border-2 border-border bg-main px-3 text-[10px] font-black uppercase tracking-[0.12em] text-main-foreground shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              aria-label="Go to word details"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <span>Detail</span>
+              <ChevronRight
+                size={14}
+                className="transition-transform group-hover/detail:translate-x-0.5"
+              />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* ── Expanded content ── */}
+      {shouldShowExpandedContent && (
+        <div className="border-t-2 border-border px-3 py-3 md:px-4">
+          {expandedContent}
+        </div>
+      )}
     </div>
   );
 }

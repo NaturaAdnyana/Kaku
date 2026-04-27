@@ -3,7 +3,6 @@
 import { ChevronUp, Eye } from "lucide-react";
 
 import type { KanjiApiDetails } from "@/app/actions/kanji";
-import { cn } from "@/lib/utils";
 
 export function KanjiPeekButton({
   isExpanded,
@@ -19,21 +18,16 @@ export function KanjiPeekButton({
       type="button"
       onClick={onClick}
       disabled={isFetching}
-      className={cn(
-        "flex h-10 min-w-10 items-center justify-center gap-2 rounded-base border-2 border-border bg-background px-3 text-foreground shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-secondary hover:shadow-none active:bg-main active:text-main-foreground disabled:cursor-wait",
-        "sm:w-10 sm:px-0",
-      )}
-      aria-label={isExpanded ? "Hide kanji details" : "Peek kanji details"}
+      className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-base border-2 border-border bg-background px-3 text-[10px] font-black uppercase tracking-[0.12em] text-foreground shadow-[2px_2px_0_var(--border)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:bg-secondary hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:bg-main active:text-main-foreground active:shadow-none disabled:cursor-wait"
+      aria-label={isExpanded ? "Hide kanji details" : "Reveal kanji details"}
     >
-      <span className="text-[10px] font-black uppercase tracking-[0.14em] sm:hidden">
-        {isExpanded ? "Hide" : "Peek"}
-      </span>
+      <span>{isExpanded ? "Hide" : "Reveal"}</span>
       {isFetching ? (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
       ) : isExpanded ? (
-        <ChevronUp size={16} className="shrink-0" />
+        <ChevronUp size={14} className="shrink-0" />
       ) : (
-        <Eye size={16} className="shrink-0" />
+        <Eye size={14} className="shrink-0" />
       )}
     </button>
   );
