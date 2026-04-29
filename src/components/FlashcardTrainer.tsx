@@ -139,6 +139,17 @@ function wait(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function shuffleCards<T>(cards: T[]) {
+  const shuffled = [...cards];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
 function katakanaToHiragana(value: string) {
   return value.replace(/[\u30a1-\u30f6]/g, (character) =>
     String.fromCharCode(character.charCodeAt(0) - 0x60),
@@ -694,7 +705,10 @@ export function FlashcardTrainer() {
       return;
     }
 
-    const nextPending = deck.map((card, index) => ({
+    const orderedDeck =
+      source === "recent" || source === "frequent" ? shuffleCards(deck) : deck;
+
+    const nextPending = orderedDeck.map((card, index) => ({
       ...card,
       sessionId: `${card.id}-${index}`,
     }));
@@ -704,7 +718,7 @@ export function FlashcardTrainer() {
     setCompleted([]);
     forgotCountsRef.current = {};
     setForgotCounts({});
-    setDeckSize(deck.length);
+    setDeckSize(orderedDeck.length);
     setAttempts(0);
     setStartedAt(new Date().getTime());
     setFinishedAt(null);
