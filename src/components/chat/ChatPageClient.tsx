@@ -156,7 +156,21 @@ function StreamingBubble({ text }: { text: string }) {
 
 // ─── Typing indicator ────────────────────────────────────────────────────────
 
-function TypingIndicator() {
+const THINKING_MESSAGES = [
+  "Thinking",
+  "Tiny wisdom loading",
+  "Kanji interrogation",
+  "Grammar surgery",
+  "Processing misery",
+  "Green brain working",
+  "Finding the point",
+];
+
+function TypingIndicator({ messageIndex }: { messageIndex: number }) {
+  const message =
+    THINKING_MESSAGES[messageIndex % THINKING_MESSAGES.length] ??
+    THINKING_MESSAGES[0];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -164,14 +178,35 @@ function TypingIndicator() {
       className="sticky left-0 flex gap-3 max-w-[calc(100vw-4rem)] sm:max-w-[28rem] lg:max-w-[32rem]"
     >
       <Avatar isUser={false} />
-      <div className="px-5 py-4 rounded-base bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] flex items-center gap-1.5 h-12">
-        {["-0.3s", "-0.15s", "0s"].map((delay) => (
-          <div
-            key={delay}
-            className="w-1.5 h-1.5 bg-main rounded-full animate-bounce"
-            style={{ animationDelay: delay }}
-          />
-        ))}
+      <div className="px-4 py-3 rounded-base bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] text-[15px] leading-relaxed font-medium text-foreground">
+        <motion.span
+          initial={{ opacity: 0.3 }}
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
+          transition={{
+            duration: 1.6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          {message}
+        </motion.span>
+        <span className="inline-flex w-5 justify-start">
+          {[".", ".", "."].map((dot, index) => (
+            <motion.span
+              key={index}
+              initial={{ opacity: 0.1 }}
+              animate={{ opacity: [0.1, 0.8, 0.1] }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                delay: index * 0.18,
+                ease: "easeInOut",
+              }}
+            >
+              {dot}
+            </motion.span>
+          ))}
+        </span>
       </div>
     </motion.div>
   );
@@ -373,7 +408,9 @@ export function ChatPageClient({ initialWord }: ChatPageClientProps) {
               ) : chatContext.type === "topic" ? (
                 <>
                   Topic:{" "}
-                  <strong className="text-foreground">{chatContext.word}</strong>
+                  <strong className="text-foreground">
+                    {chatContext.word}
+                  </strong>
                 </>
               ) : (
                 "Ask anything"
@@ -387,7 +424,11 @@ export function ChatPageClient({ initialWord }: ChatPageClientProps) {
         <div ref={scrollAreaRef} className="flex-1 overflow-auto px-4 py-4">
           <div className="flex w-max min-w-full flex-col gap-5 pr-8">
             {renderableMessages.map((m) => {
-              if (m.id === lastMsg?.id && m.role === "assistant" && isStreaming) {
+              if (
+                m.id === lastMsg?.id &&
+                m.role === "assistant" &&
+                isStreaming
+              ) {
                 return null;
               }
 
@@ -400,7 +441,9 @@ export function ChatPageClient({ initialWord }: ChatPageClientProps) {
             )}
 
             {/* Typing dots */}
-            {showTypingIndicator && <TypingIndicator />}
+            {showTypingIndicator && (
+              <TypingIndicator messageIndex={messages.length} />
+            )}
 
             {/* Error Notice */}
             {errorMessage && (
