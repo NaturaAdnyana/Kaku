@@ -8,14 +8,15 @@ import {
   Moon,
   Sun,
   LogIn,
+  MoreHorizontal,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState, type CSSProperties } from "react";
-import { motion } from "framer-motion";
+import { useState, type CSSProperties, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Variants (propagate from parent → children) ──────────────────────────────
 
@@ -140,6 +141,23 @@ export function BottomNav() {
   const { resolvedTheme, setTheme } = useTheme();
   const { data: session } = authClient.useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Close the more menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setIsMoreOpen(false);
+      }
+    }
+    if (isMoreOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.addEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMoreOpen]);
 
   const isPublicPage = ["/", "/about"].includes(pathname);
   if (pathname === "/login") return null;
@@ -187,84 +205,125 @@ export function BottomNav() {
         />
       </div>
 
-      <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 items-center gap-2 sm:bottom-6 sm:w-[95%] sm:gap-3">
-        <nav className="isolate flex min-w-0 flex-1 items-center justify-around gap-1 overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:gap-2 sm:p-2">
-          <Link
-            href="/list"
-            className={cn(
-              "flex-1",
-              pathname === "/list" ? activeText : baseText,
-            )}
-          >
-            <NavItem
-              isActive={pathname === "/list"}
-              label="List"
-              icon={<ListCollapse size={20} className="sm:size-[22px]" />}
-            />
-          </Link>
-
-          <Link
-            href="/flashcard"
-            className={cn(
-              "flex-1",
-              pathname === "/flashcard" ? activeText : baseText,
-            )}
-          >
-            <NavItem
-              isActive={pathname === "/flashcard"}
-              label="Train"
-              icon={<Dumbbell size={20} className="sm:size-[22px]" />}
-            />
-          </Link>
-
-          <button
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
-            className={cn("flex-1", baseText)}
-          >
-            <NavItem label="Theme" icon={themeIcon} />
-          </button>
-
-          {session ? (
-            <button
-              onClick={handleLogout}
-              disabled={isSigningOut}
-              aria-label="Logout"
-              className="flex-1 text-red-400/80 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <NavItem
-                label={isSigningOut ? "..." : "Logout"}
-                icon={<LogOut size={20} className="sm:size-[22px]" />}
-              />
-            </button>
-          ) : (
+      <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-1rem)] max-w-md -translate-x-1/2 sm:bottom-6 sm:w-[95%]">
+        <div className="relative w-full" ref={popoverRef}>
+          {/* Main Nav */}
+          <nav className="isolate flex w-full min-w-0 items-center justify-around gap-1 rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:gap-2 sm:p-2">
             <Link
-              href="/login"
-              aria-label="Login"
-              className="flex-1 text-blue-600"
+              href="/write"
+              className={cn(
+                "flex-1",
+                pathname === "/write" ? activeText : baseText,
+              )}
+              onClick={() => setIsMoreOpen(false)}
             >
               <NavItem
-                label="Login"
-                icon={<LogIn size={20} className="sm:size-[22px]" />}
+                isActive={pathname === "/write"}
+                label="Write"
+                icon={<PenLine size={20} className="sm:size-[22px]" />}
               />
             </Link>
-          )}
-        </nav>
 
-        <Link
-          href="/write"
-          aria-label="Write"
-          className={cn(
-            "isolate flex w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:w-[76px] sm:p-2",
-            pathname === "/write" ? activeText : baseText,
-          )}
-        >
-          <NavItem
-            isActive={pathname === "/write"}
-            label="Write"
-            icon={<PenLine size={20} className="sm:size-[22px]" />}
-          />
-        </Link>
+            <Link
+              href="/list"
+              className={cn(
+                "flex-1",
+                pathname === "/list" ? activeText : baseText,
+              )}
+              onClick={() => setIsMoreOpen(false)}
+            >
+              <NavItem
+                isActive={pathname === "/list"}
+                label="List"
+                icon={<ListCollapse size={20} className="sm:size-[22px]" />}
+              />
+            </Link>
+
+            <Link
+              href="/flashcard"
+              className={cn(
+                "flex-1",
+                pathname === "/flashcard" ? activeText : baseText,
+              )}
+              onClick={() => setIsMoreOpen(false)}
+            >
+              <NavItem
+                isActive={pathname === "/flashcard"}
+                label="Train"
+                icon={<Dumbbell size={20} className="sm:size-[22px]" />}
+              />
+            </Link>
+
+            <button
+              onClick={() => setIsMoreOpen(!isMoreOpen)}
+              aria-label="More options"
+              className={cn("relative flex-1", isMoreOpen ? activeText : baseText)}
+            >
+              <AnimatePresence>
+                {isMoreOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="absolute bottom-[calc(100%+0.5rem)] left-1/2 -translate-x-1/2 isolate flex w-[calc(100%+0.75rem)] flex-col gap-1 overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-[2px_2px_0_var(--border)] sm:bottom-[calc(100%+0.75rem)] sm:w-[calc(100%+1rem)] sm:p-2"
+                  >
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTheme(resolvedTheme === "dark" ? "light" : "dark");
+                      }}
+                      role="button"
+                      aria-label="Toggle theme"
+                      className={cn("w-full", baseText)}
+                    >
+                      <NavItem label="Theme" icon={themeIcon} />
+                    </div>
+
+                    {session ? (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isSigningOut) handleLogout();
+                        }}
+                        role="button"
+                        aria-label="Logout"
+                        aria-disabled={isSigningOut}
+                        className="w-full text-red-400/80 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+                      >
+                        <NavItem
+                          label={isSigningOut ? "..." : "Logout"}
+                          icon={<LogOut size={20} className="sm:size-[22px]" />}
+                        />
+                      </div>
+                    ) : (
+                      <Link
+                        href="/login"
+                        aria-label="Login"
+                        className="w-full text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMoreOpen(false);
+                        }}
+                      >
+                        <NavItem
+                          label="Login"
+                          icon={<LogIn size={20} className="sm:size-[22px]" />}
+                        />
+                      </Link>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <NavItem
+                isActive={isMoreOpen}
+                label="More"
+                icon={<MoreHorizontal size={20} className="sm:size-[22px]" />}
+              />
+            </button>
+          </nav>
+        </div>
       </div>
     </>
   );
