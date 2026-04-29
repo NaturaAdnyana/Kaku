@@ -30,6 +30,7 @@ import { LottiePlayer } from "@/components/LottieCanvas";
 import { Button } from "@/components/ui/button";
 import { useLottieAnimation } from "@/hooks/useLottieAnimation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type TrainerStatus =
   | "choosing"
@@ -263,6 +264,19 @@ export function FlashcardTrainer() {
     forgotCountsRef.current = forgotCounts;
   }, [forgotCounts]);
 
+  useEffect(() => {
+    return () => {
+      speechStopRequestedRef.current = true;
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      }
+      if (speechMissedTimerRef.current !== null) {
+        window.clearTimeout(speechMissedTimerRef.current);
+      }
+    };
+  }, []);
+
   const currentCard = pending[0];
   const progress = deckSize > 0 ? Math.round((completed.length / deckSize) * 100) : 0;
   const elapsedTime =
@@ -443,6 +457,25 @@ export function FlashcardTrainer() {
     card: SessionCard,
     expectedReading: string,
   ) {
+    const text = transcript.toLowerCase();
+    const isSkip = text && /skip|next|pass|スキップ|パス|わからない|分からない/.test(text);
+    const isFlip = text && /flip|show|turn|フリップ|答えを教えて|めくって/.test(text);
+
+    if (isSkip) {
+      clearSpeechMissedTimer();
+      setSpeechStatus("missed");
+      setSpeechMessage("Skipped word.");
+      void advanceCard("forget", card, { keepSpeechFeedback: true });
+      return;
+    }
+
+    if (isFlip) {
+      setIsFlipped(true);
+      setSpeechStatus("listening");
+      setSpeechMessage("Flipped card. Still listening...");
+      return;
+    }
+
     const spokenReading = await getComparableSpokenReading(transcript, card);
 
     if (spokenReading && spokenReading === expectedReading) {
@@ -615,6 +648,7 @@ export function FlashcardTrainer() {
     setSpeechEnabled(true);
     resetSpeechRestartGuard();
     startSpeechListening(currentCard);
+    toast("Say the word. Or say 'skip' (スキップ) to pass, 'flip' (フリップ) to show answer.", { icon: "💡", id: "speech-skip-hint" });
   }
 
   function resetTrainer() {
@@ -706,9 +740,14 @@ export function FlashcardTrainer() {
                   label="Reading and meaning"
                   className="[transform:rotateY(180deg)]"
                 >
-                  <p className="mt-5 break-all font-jp text-3xl font-black leading-tight">
-                    {getCardReading(currentCard)}
-                  </p>
+                  <div className="mt-5 flex flex-col items-center gap-2">
+                    <p className="font-jp text-xl font-bold text-muted-foreground">
+                      {currentCard.word}
+                    </p>
+                    <p className="break-all font-jp text-4xl font-black leading-tight">
+                      {getCardReading(currentCard)}
+                    </p>
+                  </div>
                   <p className="mt-5 max-w-xs text-base font-bold leading-relaxed">
                     {meanings}
                   </p>
