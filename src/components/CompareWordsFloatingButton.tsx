@@ -13,6 +13,7 @@ function buildCompareHref(
   context: "detail" | "list" = "detail",
 ) {
   const params = new URLSearchParams();
+  params.set("word", routeWord);
   selectedWords.forEach((word) => {
     params.append("compare", word);
   });
@@ -20,7 +21,7 @@ function buildCompareHref(
     params.set("compareContext", "list");
   }
 
-  return `/kanji/${encodeURIComponent(routeWord)}/chat?${params.toString()}`;
+  return `/chat?${params.toString()}`;
 }
 
 export function CompareWordsFloatingButton() {

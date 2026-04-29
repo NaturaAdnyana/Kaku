@@ -14,5 +14,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/list", "/write", "/kanji/:word/chat"],
+  matcher: ["/list", "/write", "/chat"],
 };

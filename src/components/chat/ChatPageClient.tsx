@@ -6,7 +6,6 @@ import { Send, AlertTriangle, User } from "lucide-react";
 import {
   useEffect,
   useRef,
-  use,
   useState,
   useCallback,
   useMemo,
@@ -41,6 +40,10 @@ function toRenderableMessage(message: UIMessage) {
     role: message.role,
     text,
   };
+}
+
+function hasMarkdownTable(text: string) {
+  return /\|.+\|\s*\n\s*\|[\s:-]+\|/.test(text);
 }
 
 // ─── Shared primitives (no re-renders unless props change) ──────────────────
@@ -95,14 +98,20 @@ function Bubble({
 const FrozenMessage = memo(
   function FrozenMessage({ role, text }: { role: string; text: string }) {
     const isUser = role === "user";
+    const hasWideContent = !isUser && hasMarkdownTable(text);
+
     return (
       <motion.div
         initial={isUser ? { opacity: 0, y: 10, scale: 0.95 } : false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className={cn(
-          "flex gap-3 max-w-[88%]",
-          isUser ? "ml-auto flex-row-reverse" : "",
+          "flex gap-3",
+          hasWideContent && "max-w-none self-start",
+          !hasWideContent &&
+            (isUser
+              ? "sticky right-0 z-10 max-w-[calc(100vw-4rem)] self-end flex-row-reverse sm:max-w-[28rem] lg:max-w-[32rem]"
+              : "sticky left-0 z-10 max-w-[calc(100vw-4rem)] self-start sm:max-w-[28rem] lg:max-w-[32rem]"),
         )}
       >
         <Avatar isUser={isUser} />
@@ -122,11 +131,18 @@ const FrozenMessage = memo(
 // ─── Live streaming bubble — re-renders freely on every token ───────────────
 
 function StreamingBubble({ text }: { text: string }) {
+  const hasWideContent = hasMarkdownTable(text);
+
   return (
     <motion.div
       initial={false}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="flex gap-3 max-w-[88%]"
+      className={cn(
+        "flex gap-3",
+        hasWideContent
+          ? "max-w-none"
+          : "sticky left-0 max-w-[calc(100vw-4rem)] sm:max-w-[28rem] lg:max-w-[32rem]",
+      )}
     >
       <Avatar isUser={false} />
       <Bubble isUser={false}>
@@ -145,7 +161,7 @@ function TypingIndicator() {
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="flex gap-3 max-w-[88%]"
+      className="sticky left-0 flex gap-3 max-w-[calc(100vw-4rem)] sm:max-w-[28rem] lg:max-w-[32rem]"
     >
       <Avatar isUser={false} />
       <div className="px-5 py-4 rounded-base bg-blank border-2 border-border shadow-[4px_4px_0_var(--border)] flex items-center gap-1.5 h-12">
@@ -163,19 +179,75 @@ function TypingIndicator() {
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-type Props = { params: Promise<{ word: string }> };
+type ChatPageClientProps = {
+  initialWord?: string;
+};
 
-export default function ChatPage({ params }: Props) {
-  const { word } = use(params);
-  const searchParams = useSearchParams();
-  const decodedWord = decodeURIComponent(word);
-  const compareWords = useMemo(
-    () => Array.from(new Set(searchParams.getAll("compare"))),
-    [searchParams],
-  );
+type ChatContext =
+  | { type: "topic"; word: string }
+  | {
+      type: "compare";
+      sourceWord: string | null;
+      words: string[];
+      source: "detail" | "list";
+    }
+  | { type: "empty" };
+
+function getChatContext(searchParams: URLSearchParams): ChatContext {
+  const word = searchParams.get("word");
+  const compareWords = Array.from(new Set(searchParams.getAll("compare")));
   const compareContext = searchParams.get("compareContext");
-  const isCompareMode = compareWords.length > 0;
-  const isSavedListCompare = compareContext === "list";
+
+  if (compareWords.length > 0) {
+    return {
+      type: "compare",
+      sourceWord: word,
+      words: compareWords,
+      source: compareContext === "list" ? "list" : "detail",
+    };
+  }
+
+  if (word) {
+    return { type: "topic", word };
+  }
+
+  return { type: "empty" };
+}
+
+function getInitialPrompt(context: ChatContext): string | null {
+  if (context.type === "compare") {
+    const wordList = context.words
+      .map((currentWord) => `"${currentWord}"`)
+      .join(", ");
+
+    if (context.source === "list" || !context.sourceWord) {
+      return `Please compare these selected saved Japanese words: ${wordList}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`;
+    }
+
+    return `I'm learning the word/kanji "${context.sourceWord}". Please compare these related words: ${wordList}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`;
+  }
+
+  if (context.type === "topic") {
+    return `I'm learning the word/kanji "${context.word}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`;
+  }
+
+  return null;
+}
+
+export function ChatPageClient({ initialWord }: ChatPageClientProps) {
+  const searchParams = useSearchParams();
+  const chatContext = useMemo(() => {
+    const params = new URLSearchParams(searchParams);
+    if (initialWord && !params.has("word")) {
+      params.set("word", initialWord);
+    }
+
+    return getChatContext(params);
+  }, [initialWord, searchParams]);
+  const initialPrompt = useMemo(
+    () => getInitialPrompt(chatContext),
+    [chatContext],
+  );
 
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -244,24 +316,13 @@ export default function ChatPage({ params }: Props) {
 
   // ── Auto-start ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!hasStartedRef.current && messages.length === 0) {
+    if (!hasStartedRef.current && messages.length === 0 && initialPrompt) {
       hasStartedRef.current = true;
       sendMessage({
-        text: isCompareMode
-          ? isSavedListCompare
-            ? `Please compare these selected saved Japanese words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
-            : `I'm learning the word/kanji "${decodedWord}". Please compare these related words: ${compareWords.map((currentWord) => `"${currentWord}"`).join(", ")}. Focus on nuanced differences in meaning, usage, tone, and reading. Return a markdown table that makes the differences easy to scan, then add a short summary of when to use each word.`
-          : `I'm learning the word/kanji "${decodedWord}". Please provide some example sentences using this kanji/word, and for each sentence, include its meaning and reading in a markdown table format.`,
+        text: initialPrompt,
       });
     }
-  }, [
-    compareWords,
-    decodedWord,
-    isCompareMode,
-    isSavedListCompare,
-    messages.length,
-    sendMessage,
-  ]);
+  }, [initialPrompt, messages.length, sendMessage]);
 
   // ── Auto-grow textarea ───────────────────────────────────────────────────
   useEffect(() => {
@@ -300,17 +361,22 @@ export default function ChatPage({ params }: Props) {
           <div className="flex flex-col items-center min-w-0 px-2">
             <h1 className="text-base font-bold truncate">Koijo — AI Sensei</h1>
             <span className="text-xs text-muted-foreground font-medium">
-              {isCompareMode ? (
+              {chatContext.type === "compare" ? (
                 <>
-                  {isSavedListCompare ? "Saved Compare:" : "Compare:"}{" "}
+                  {chatContext.source === "list"
+                    ? "Saved Compare:"
+                    : "Compare:"}{" "}
                   <strong className="text-foreground">
-                    {compareWords.length} words
+                    {chatContext.words.length} words
                   </strong>
                 </>
-              ) : (
+              ) : chatContext.type === "topic" ? (
                 <>
-                  Topic: <strong className="text-foreground">{decodedWord}</strong>
+                  Topic:{" "}
+                  <strong className="text-foreground">{chatContext.word}</strong>
                 </>
+              ) : (
+                "Ask anything"
               )}
             </span>
           </div>
@@ -318,37 +384,36 @@ export default function ChatPage({ params }: Props) {
         </div>
 
         {/* ── Messages ── */}
-        <div
-          ref={scrollAreaRef}
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-5"
-        >
-          {renderableMessages.map((m) => {
-            if (m.id === lastMsg?.id && m.role === "assistant" && isStreaming) {
-              return null;
-            }
+        <div ref={scrollAreaRef} className="flex-1 overflow-auto px-4 py-4">
+          <div className="flex w-max min-w-full flex-col gap-5 pr-8">
+            {renderableMessages.map((m) => {
+              if (m.id === lastMsg?.id && m.role === "assistant" && isStreaming) {
+                return null;
+              }
 
-            return <FrozenMessage key={m.id} role={m.role} text={m.text} />;
-          })}
+              return <FrozenMessage key={m.id} role={m.role} text={m.text} />;
+            })}
 
-          {/* Live streaming bubble — re-renders on every token, isolated */}
-          {streamingText && streamingText.trim() !== "" && (
-            <StreamingBubble text={streamingText} />
-          )}
+            {/* Live streaming bubble — re-renders on every token, isolated */}
+            {streamingText && streamingText.trim() !== "" && (
+              <StreamingBubble text={streamingText} />
+            )}
 
-          {/* Typing dots */}
-          {showTypingIndicator && <TypingIndicator />}
+            {/* Typing dots */}
+            {showTypingIndicator && <TypingIndicator />}
 
-          {/* Error Notice */}
-          {errorMessage && (
-            <div className="flex flex-col items-center gap-3 py-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-destructive/10 text-destructive border-2 border-destructive px-4 py-3 rounded-base text-sm font-bold flex items-center gap-2 shadow-[4px_4px_0_var(--destructive)]">
-                <AlertTriangle size={16} />
-                {errorMessage}
+            {/* Error Notice */}
+            {errorMessage && (
+              <div className="sticky left-0 flex flex-col items-center gap-3 py-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="bg-destructive/10 text-destructive border-2 border-destructive px-4 py-3 rounded-base text-sm font-bold flex items-center gap-2 shadow-[4px_4px_0_var(--destructive)]">
+                  <AlertTriangle size={16} />
+                  {errorMessage}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="h-1" />
+            <div className="h-1" />
+          </div>
         </div>
 
         {/* ── Input ── */}

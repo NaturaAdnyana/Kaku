@@ -144,7 +144,7 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
         )}
 
         <Link
-          href={`/kanji/${encodeURIComponent(decodedWord)}/chat`}
+          href={`/chat?word=${encodeURIComponent(decodedWord)}`}
           className={cn(bannerActionButtonClass, "bottom-4 left-4")}
         >
           <MessageCircle size={14} strokeWidth={3} />
@@ -209,7 +209,7 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
           </div>
 
           <Link
-            href={`/kanji/${encodeURIComponent(decodedWord)}/chat`}
+            href={`/chat?word=${encodeURIComponent(decodedWord)}`}
             onClick={(e) => e.stopPropagation()}
             className={cn(bannerActionButtonClass, "bottom-4 left-4")}
           >
