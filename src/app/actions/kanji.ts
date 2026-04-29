@@ -8,6 +8,12 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+const JISHO_FETCH_OPTIONS = {
+  cache: "force-cache",
+  next: { revalidate: false },
+} as const;
+const JISHO_FLASHCARD_FETCH_DELAY_MS = 150;
+
 export type KanjiApiDetails = {
   meanings?: string[];
   jlpt: number | null;
@@ -16,6 +22,185 @@ export type KanjiApiDetails = {
   kun_readings?: string[];
   on_readings?: string[];
 };
+
+export type FlashcardDeckSource = "recent" | "frequent" | "jlpt-random";
+export type FlashcardJlptLevel = "n5" | "n4" | "n3" | "n2" | "n1";
+
+export type FlashcardItem = {
+  id: string;
+  word: string;
+  reading?: string;
+  meanings: string[];
+  partsOfSpeech: string[];
+  searchCount?: number;
+};
+
+type SavedWordSeed = {
+  id: string;
+  word: string;
+  searchCount: number;
+};
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function shuffle<T>(items: T[]) {
+  const next = [...items];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+
+  return next;
+}
+
+function flashcardFromJishoEntry(
+  entry: NonNullable<JishoResponse["data"]>[number],
+  fallbackWord?: string,
+): FlashcardItem {
+  const japaneseEntry = entry.japanese?.find((item) => item.word) ?? entry.japanese?.[0];
+  const wordText = japaneseEntry?.word ?? japaneseEntry?.reading ?? fallbackWord ?? entry.slug;
+  const reading = japaneseEntry?.reading;
+  const meanings = entry.senses?.[0]?.english_definitions ?? [];
+  const partsOfSpeech = entry.senses?.[0]?.parts_of_speech ?? [];
+
+  return {
+    id: entry.slug || wordText,
+    word: wordText,
+    reading: reading && reading !== wordText ? reading : undefined,
+    meanings,
+    partsOfSpeech,
+  };
+}
+
+async function fetchJishoFlashcard(wordText: string): Promise<FlashcardItem> {
+  const res = await fetch(
+    `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(wordText)}`,
+    JISHO_FETCH_OPTIONS,
+  );
+
+  if (!res.ok) {
+    return {
+      id: wordText,
+      word: wordText,
+      meanings: [],
+      partsOfSpeech: [],
+    };
+  }
+
+  const data = (await res.json()) as JishoResponse;
+  const entry = findBestJishoEntry(data.data ?? [], wordText);
+
+  if (!entry) {
+    return {
+      id: wordText,
+      word: wordText,
+      meanings: [],
+      partsOfSpeech: [],
+    };
+  }
+
+  return flashcardFromJishoEntry(entry, wordText);
+}
+
+async function getSavedFlashcardSeeds(
+  userId: string,
+  source: Extract<FlashcardDeckSource, "recent" | "frequent">,
+): Promise<SavedWordSeed[]> {
+  const orderBy =
+    source === "frequent"
+      ? [desc(userWord.searchCount), desc(userWord.updatedAt), desc(userWord.id)]
+      : [desc(userWord.updatedAt), desc(userWord.id)];
+
+  return db
+    .select({
+      id: userWord.id,
+      word: word.word,
+      searchCount: userWord.searchCount,
+    })
+    .from(userWord)
+    .innerJoin(word, eq(userWord.wordId, word.id))
+    .where(eq(userWord.userId, userId))
+    .orderBy(...orderBy)
+    .limit(10);
+}
+
+async function getRandomJlptFlashcards(level: FlashcardJlptLevel = "n2") {
+  const res = await fetch(
+    `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(`#jlpt-${level} #verb`)}`,
+    JISHO_FETCH_OPTIONS,
+  );
+
+  if (!res.ok) {
+    return { error: "Jisho API response not OK" };
+  }
+
+  const data = (await res.json()) as JishoResponse;
+  const flashcards = shuffle(data.data ?? [])
+    .slice(0, 10)
+    .map((entry, index) => ({
+      ...flashcardFromJishoEntry(entry),
+      id: `${entry.slug || "jlpt"}-${index}`,
+    }));
+
+  return { success: true, data: flashcards };
+}
+
+export async function getFlashcardDeck(
+  source: FlashcardDeckSource,
+  options?: { jlptLevel?: FlashcardJlptLevel },
+) {
+  try {
+    if (source === "jlpt-random") {
+      return getRandomJlptFlashcards(options?.jlptLevel);
+    }
+
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session || !session.user) {
+      return { error: "Unauthorized" };
+    }
+
+    const seeds = await getSavedFlashcardSeeds(session.user.id, source);
+    const flashcards = [];
+
+    for (const [index, seed] of seeds.entries()) {
+      if (index > 0) {
+        await wait(JISHO_FLASHCARD_FETCH_DELAY_MS);
+      }
+
+      flashcards.push({
+        ...(await fetchJishoFlashcard(seed.word)),
+        id: seed.id,
+        word: seed.word,
+        searchCount: seed.searchCount,
+      });
+    }
+
+    return { success: true, data: flashcards };
+  } catch (error) {
+    console.error("Error fetching flashcard deck:", error);
+    return { error: "Failed to fetch flashcard deck" };
+  }
+}
+
+export async function getJishoReading(text: string) {
+  try {
+    const flashcard = await fetchJishoFlashcard(text);
+
+    return {
+      success: true,
+      reading: flashcard.reading ?? flashcard.word,
+    };
+  } catch (error) {
+    console.error("Error fetching Jisho reading:", error);
+    return { success: false, error: "Failed to fetch Jisho reading" };
+  }
+}
 
 export async function saveWord(text: string) {
   try {
@@ -418,9 +603,10 @@ export async function getWordsForKanji(kanjiCharacter: string) {
 
 export async function getJishoDefinition(word: string) {
   try {
-    const res = await fetch(`https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(word)}`, {
-      cache: "force-cache"
-    });
+    const res = await fetch(
+      `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(word)}`,
+      JISHO_FETCH_OPTIONS,
+    );
     if (res.ok) {
         const data = (await res.json()) as JishoResponse;
         const found = findBestJishoEntry(data.data ?? [], word);

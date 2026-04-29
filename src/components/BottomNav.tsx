@@ -1,6 +1,14 @@
 "use client";
 
-import { LogOut, PenLine, ListCollapse, Moon, Sun, LogIn } from "lucide-react";
+import {
+  Dumbbell,
+  LogOut,
+  PenLine,
+  ListCollapse,
+  Moon,
+  Sun,
+  LogIn,
+} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -179,11 +187,75 @@ export function BottomNav() {
         />
       </div>
 
-      <nav className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1rem)] max-w-sm -translate-x-1/2 items-center justify-around gap-1 overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all isolate sm:bottom-6 sm:w-[95%] sm:gap-2 sm:p-2">
+      <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 items-center gap-2 sm:bottom-6 sm:w-[95%] sm:gap-3">
+        <nav className="isolate flex min-w-0 flex-1 items-center justify-around gap-1 overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:gap-2 sm:p-2">
+          <Link
+            href="/list"
+            className={cn(
+              "flex-1",
+              pathname === "/list" ? activeText : baseText,
+            )}
+          >
+            <NavItem
+              isActive={pathname === "/list"}
+              label="List"
+              icon={<ListCollapse size={20} className="sm:size-[22px]" />}
+            />
+          </Link>
+
+          <Link
+            href="/flashcard"
+            className={cn(
+              "flex-1",
+              pathname === "/flashcard" ? activeText : baseText,
+            )}
+          >
+            <NavItem
+              isActive={pathname === "/flashcard"}
+              label="Train"
+              icon={<Dumbbell size={20} className="sm:size-[22px]" />}
+            />
+          </Link>
+
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+            className={cn("flex-1", baseText)}
+          >
+            <NavItem label="Theme" icon={themeIcon} />
+          </button>
+
+          {session ? (
+            <button
+              onClick={handleLogout}
+              disabled={isSigningOut}
+              aria-label="Logout"
+              className="flex-1 text-red-400/80 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <NavItem
+                label={isSigningOut ? "..." : "Logout"}
+                icon={<LogOut size={20} className="sm:size-[22px]" />}
+              />
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              aria-label="Login"
+              className="flex-1 text-blue-600"
+            >
+              <NavItem
+                label="Login"
+                icon={<LogIn size={20} className="sm:size-[22px]" />}
+              />
+            </Link>
+          )}
+        </nav>
+
         <Link
           href="/write"
+          aria-label="Write"
           className={cn(
-            "flex-1",
+            "isolate flex w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:w-[76px] sm:p-2",
             pathname === "/write" ? activeText : baseText,
           )}
         >
@@ -193,51 +265,7 @@ export function BottomNav() {
             icon={<PenLine size={20} className="sm:size-[22px]" />}
           />
         </Link>
-
-        <Link
-          href="/list"
-          className={cn("flex-1", pathname === "/list" ? activeText : baseText)}
-        >
-          <NavItem
-            isActive={pathname === "/list"}
-            label="List"
-            icon={<ListCollapse size={20} className="sm:size-[22px]" />}
-          />
-        </Link>
-
-        <button
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
-          className={cn("flex-1", baseText)}
-        >
-          <NavItem label="Theme" icon={themeIcon} />
-        </button>
-
-        {session ? (
-          <button
-            onClick={handleLogout}
-            disabled={isSigningOut}
-            aria-label="Logout"
-            className="flex-1 text-red-400/80 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <NavItem
-              label={isSigningOut ? "..." : "Logout"}
-              icon={<LogOut size={20} className="sm:size-[22px]" />}
-            />
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            aria-label="Login"
-            className="flex-1 text-blue-600"
-          >
-            <NavItem
-              label="Login"
-              icon={<LogIn size={20} className="sm:size-[22px]" />}
-            />
-          </Link>
-        )}
-      </nav>
+      </div>
     </>
   );
 }
