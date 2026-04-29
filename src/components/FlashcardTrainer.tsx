@@ -268,6 +268,7 @@ export function FlashcardTrainer() {
   const speechStopRequestedRef = useRef(false);
   const speechRestartTimesRef = useRef<number[]>([]);
   const speechMissedTimerRef = useRef<number | null>(null);
+  const speechRecognitionSessionRef = useRef(0);
   const hasCelebratedRef = useRef(false);
   const { animationData } = useLottieAnimation(
     status === "finished" ? "bird-flying-jump.json" : null,
@@ -540,6 +541,8 @@ export function FlashcardTrainer() {
 
     const expectedReading = normalizeJapaneseSpeech(getCardReading(card));
     const recognition = new SpeechRecognitionConstructor();
+    const recognitionSession = speechRecognitionSessionRef.current + 1;
+    speechRecognitionSessionRef.current = recognitionSession;
 
     recognition.lang = "ja-JP";
     recognition.continuous = true;
@@ -551,7 +554,11 @@ export function FlashcardTrainer() {
       void handleSpeechResult(transcript, card, expectedReading);
     };
     recognition.onerror = (event) => {
-      if (speechStopRequestedRef.current || event.error === "aborted") {
+      if (
+        speechRecognitionSessionRef.current !== recognitionSession ||
+        speechStopRequestedRef.current ||
+        event.error === "aborted"
+      ) {
         return;
       }
 
@@ -564,6 +571,10 @@ export function FlashcardTrainer() {
       setSpeechMessage("Still listening...");
     };
     recognition.onend = () => {
+      if (speechRecognitionSessionRef.current !== recognitionSession) {
+        return;
+      }
+
       if (recognitionRef.current === recognition) {
         recognitionRef.current = null;
       }
