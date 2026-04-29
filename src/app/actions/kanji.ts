@@ -13,6 +13,8 @@ const JISHO_FETCH_OPTIONS = {
   next: { revalidate: false },
 } as const;
 const JISHO_FLASHCARD_FETCH_DELAY_MS = 150;
+const JISHO_JLPT_PAGE_MIN = 1;
+const JISHO_JLPT_PAGE_MAX = 7;
 
 export type KanjiApiDetails = {
   meanings?: string[];
@@ -33,6 +35,14 @@ export type FlashcardItem = {
   meanings: string[];
   partsOfSpeech: string[];
   searchCount?: number;
+};
+
+export type FlashcardHydrationResult = {
+  word: string;
+  reading?: string;
+  meanings: string[];
+  partsOfSpeech: string[];
+  success: boolean;
 };
 
 type SavedWordSeed = {
@@ -56,6 +66,10 @@ function shuffle<T>(items: T[]) {
   return next;
 }
 
+function randomIntInclusive(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function flashcardFromJishoEntry(
   entry: NonNullable<JishoResponse["data"]>[number],
   fallbackWord?: string,
@@ -75,6 +89,15 @@ function flashcardFromJishoEntry(
   };
 }
 
+function emptyFlashcard(wordText: string): FlashcardItem {
+  return {
+    id: wordText,
+    word: wordText,
+    meanings: [],
+    partsOfSpeech: [],
+  };
+}
+
 async function fetchJishoFlashcard(wordText: string): Promise<FlashcardItem> {
   const res = await fetch(
     `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(wordText)}`,
@@ -82,27 +105,27 @@ async function fetchJishoFlashcard(wordText: string): Promise<FlashcardItem> {
   );
 
   if (!res.ok) {
-    return {
-      id: wordText,
-      word: wordText,
-      meanings: [],
-      partsOfSpeech: [],
-    };
+    return emptyFlashcard(wordText);
   }
 
   const data = (await res.json()) as JishoResponse;
   const entry = findBestJishoEntry(data.data ?? [], wordText);
 
   if (!entry) {
-    return {
-      id: wordText,
-      word: wordText,
-      meanings: [],
-      partsOfSpeech: [],
-    };
+    return emptyFlashcard(wordText);
   }
 
   return flashcardFromJishoEntry(entry, wordText);
+}
+
+function seedFlashcardFromSavedWord(seed: SavedWordSeed): FlashcardItem {
+  return {
+    id: seed.id,
+    word: seed.word,
+    meanings: [],
+    partsOfSpeech: [],
+    searchCount: seed.searchCount,
+  };
 }
 
 async function getSavedFlashcardSeeds(
@@ -128,8 +151,9 @@ async function getSavedFlashcardSeeds(
 }
 
 async function getRandomJlptFlashcards(level: FlashcardJlptLevel = "n2") {
+  const page = randomIntInclusive(JISHO_JLPT_PAGE_MIN, JISHO_JLPT_PAGE_MAX);
   const res = await fetch(
-    `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(`#jlpt-${level} #verb`)}`,
+    `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(`#jlpt-${level} #verb`)}&page=${page}`,
     JISHO_FETCH_OPTIONS,
   );
 
@@ -166,25 +190,43 @@ export async function getFlashcardDeck(
     }
 
     const seeds = await getSavedFlashcardSeeds(session.user.id, source);
-    const flashcards = [];
-
-    for (const [index, seed] of seeds.entries()) {
-      if (index > 0) {
-        await wait(JISHO_FLASHCARD_FETCH_DELAY_MS);
-      }
-
-      flashcards.push({
-        ...(await fetchJishoFlashcard(seed.word)),
-        id: seed.id,
-        word: seed.word,
-        searchCount: seed.searchCount,
-      });
-    }
+    const flashcards = seeds.map(seedFlashcardFromSavedWord);
 
     return { success: true, data: flashcards };
   } catch (error) {
     console.error("Error fetching flashcard deck:", error);
     return { error: "Failed to fetch flashcard deck" };
+  }
+}
+
+export async function hydrateFlashcards(words: string[]) {
+  try {
+    const uniqueWords = [...new Set(words.map((word) => word.trim()).filter(Boolean))].slice(0, 3);
+    const flashcards: FlashcardHydrationResult[] = [];
+
+    for (const [index, wordText] of uniqueWords.entries()) {
+      if (index > 0) {
+        await wait(JISHO_FLASHCARD_FETCH_DELAY_MS);
+      }
+
+      const flashcard = await fetchJishoFlashcard(wordText);
+      const success = Boolean(
+        flashcard.reading || flashcard.meanings.length || flashcard.partsOfSpeech.length,
+      );
+
+      flashcards.push({
+        word: wordText,
+        reading: flashcard.reading,
+        meanings: flashcard.meanings,
+        partsOfSpeech: flashcard.partsOfSpeech,
+        success,
+      });
+    }
+
+    return { success: true, data: flashcards };
+  } catch (error) {
+    console.error("Error hydrating flashcards:", error);
+    return { success: false, error: "Failed to hydrate flashcards" };
   }
 }
 

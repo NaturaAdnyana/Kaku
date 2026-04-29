@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -21,8 +28,10 @@ import { motion } from "framer-motion";
 
 import {
   getFlashcardDeck,
+  hydrateFlashcards,
   getJishoReading,
   type FlashcardDeckSource,
+  type FlashcardHydrationResult,
   type FlashcardItem,
   type FlashcardJlptLevel,
 } from "@/app/actions/kanji";
@@ -111,6 +120,8 @@ const DECK_OPTIONS = [
 
 const JLPT_LEVELS = ["n5", "n4", "n3", "n2", "n1"] satisfies FlashcardJlptLevel[];
 const CARD_SWITCH_DELAY_MS = 260;
+const FLASHCARD_PREFETCH_WINDOW = 3;
+const FLASHCARD_HYDRATION_RETRY_LIMIT = 2;
 const SPEECH_RESTART_WINDOW_MS = 5000;
 const SPEECH_RESTART_LIMIT = 3;
 const SPEECH_MISSED_FEEDBACK_MS = 1200;
@@ -143,6 +154,10 @@ function normalizeJapaneseSpeech(value: string) {
 
 function getCardReading(card: FlashcardItem) {
   return card.reading ?? card.word;
+}
+
+function hasFlashcardDetails(card: FlashcardItem) {
+  return Boolean(card.reading || card.meanings.length || card.partsOfSpeech.length);
 }
 
 function normalizeSpokenReading(value: string, card: FlashcardItem) {
@@ -234,15 +249,22 @@ export function FlashcardTrainer() {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const pendingRef = useRef<SessionCard[]>([]);
   const forgotCountsRef = useRef<Record<string, number>>({});
+  const hydrationAttemptsRef = useRef<Record<string, number>>({});
+  const inflightHydrationWordsRef = useRef<Set<string>>(new Set());
   const speechEnabledRef = useRef(false);
   const isSwitchingRef = useRef(false);
   const statusRef = useRef<TrainerStatus>("choosing");
   const speechStopRequestedRef = useRef(false);
   const speechRestartTimesRef = useRef<number[]>([]);
   const speechMissedTimerRef = useRef<number | null>(null);
+  const hasCelebratedRef = useRef(false);
   const { animationData } = useLottieAnimation(
     status === "finished" ? "bird-flying-jump.json" : null,
   );
+  const resumeSpeechListening = useEffectEvent((card: SessionCard) => {
+    resetSpeechRestartGuard();
+    startSpeechListening(card);
+  });
 
   useEffect(() => {
     speechEnabledRef.current = speechEnabled;
@@ -277,10 +299,151 @@ export function FlashcardTrainer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (status !== "playing") {
+      return;
+    }
+
+    const cardsToHydrate = pending
+      .slice(0, FLASHCARD_PREFETCH_WINDOW)
+      .filter((card) => {
+        if (hasFlashcardDetails(card)) {
+          return false;
+        }
+
+        if (inflightHydrationWordsRef.current.has(card.word)) {
+          return false;
+        }
+
+        return (
+          (hydrationAttemptsRef.current[card.sessionId] ?? 0) <
+          FLASHCARD_HYDRATION_RETRY_LIMIT
+        );
+      });
+
+    if (cardsToHydrate.length === 0) {
+      return;
+    }
+
+    for (const card of cardsToHydrate) {
+      inflightHydrationWordsRef.current.add(card.word);
+      hydrationAttemptsRef.current[card.sessionId] =
+        (hydrationAttemptsRef.current[card.sessionId] ?? 0) + 1;
+    }
+
+    const words = cardsToHydrate.map((card) => card.word);
+
+    void hydrateFlashcards(words)
+      .then((response) => {
+        if (!response.success || !response.data?.length) {
+          return;
+        }
+
+        const hydrationByWord = new Map(
+          response.data.map((item) => [item.word, item] satisfies [string, FlashcardHydrationResult]),
+        );
+
+        setPending((cards) =>
+          cards.map((card) => {
+            const hydrated = hydrationByWord.get(card.word);
+
+            if (!hydrated || !hydrated.success) {
+              return card;
+            }
+
+            return {
+              ...card,
+              reading: hydrated.reading,
+              meanings: hydrated.meanings,
+              partsOfSpeech: hydrated.partsOfSpeech,
+            };
+          }),
+        );
+      })
+      .finally(() => {
+        for (const word of words) {
+          inflightHydrationWordsRef.current.delete(word);
+        }
+      });
+  }, [pending, status]);
+
+  useEffect(() => {
+    if (status !== "finished") {
+      hasCelebratedRef.current = false;
+      return;
+    }
+
+    if (hasCelebratedRef.current) {
+      return;
+    }
+
+    hasCelebratedRef.current = true;
+
+    let cancelled = false;
+
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      if (cancelled) {
+        return;
+      }
+
+      const defaults = {
+        origin: { y: 0.7 },
+        zIndex: 2000,
+      };
+
+      confetti({
+        ...defaults,
+        particleCount: 120,
+        spread: 80,
+        startVelocity: 42,
+      });
+
+      window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        confetti({
+          ...defaults,
+          particleCount: 80,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.75 },
+        });
+        confetti({
+          ...defaults,
+          particleCount: 80,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.75 },
+        });
+      }, 180);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   const currentCard = pending[0];
   const progress = deckSize > 0 ? Math.round((completed.length / deckSize) * 100) : 0;
   const elapsedTime =
     startedAt && finishedAt ? formatDuration(finishedAt - startedAt) : "0s";
+
+  useEffect(() => {
+    if (
+      status !== "playing" ||
+      !speechEnabled ||
+      !currentCard ||
+      isSwitching ||
+      !hasFlashcardDetails(currentCard) ||
+      recognitionRef.current
+    ) {
+      return;
+    }
+
+    resumeSpeechListening(currentCard);
+  }, [currentCard, isSwitching, speechEnabled, status]);
 
   const results = useMemo(() => {
     const firstTry = completed.filter((card) => card.forgotCount === 0).length;
@@ -507,6 +670,8 @@ export function FlashcardTrainer() {
     }
     setError(null);
     resetSpeechRestartGuard();
+    hydrationAttemptsRef.current = {};
+    inflightHydrationWordsRef.current.clear();
     speechEnabledRef.current = false;
     setSpeechEnabled(false);
     setSpeechStatus("idle");
@@ -621,7 +786,11 @@ export function FlashcardTrainer() {
 
     if (shouldKeepListening) {
       window.setTimeout(() => {
-        if (speechEnabledRef.current && !isSwitchingRef.current) {
+        if (
+          speechEnabledRef.current &&
+          !isSwitchingRef.current &&
+          hasFlashcardDetails(nextPending[0])
+        ) {
           startSpeechListening(nextPending[0]);
         }
       }, 80);
@@ -633,6 +802,11 @@ export function FlashcardTrainer() {
 
   function toggleSpeechListening() {
     if (!currentCard || isSwitching) return;
+
+    if (!hasFlashcardDetails(currentCard)) {
+      toast("Still loading this word from Jisho. Try again in a moment.");
+      return;
+    }
 
     if (speechEnabled) {
       speechEnabledRef.current = false;
@@ -655,6 +829,8 @@ export function FlashcardTrainer() {
     stopSpeechRecognition();
     clearSpeechMissedTimer();
     resetSpeechRestartGuard();
+    hydrationAttemptsRef.current = {};
+    inflightHydrationWordsRef.current.clear();
     setStatus("choosing");
     setSelectedSource(null);
     pendingRef.current = [];
@@ -676,6 +852,7 @@ export function FlashcardTrainer() {
   }
 
   if (status === "playing" && currentCard) {
+    const isCurrentCardHydrated = hasFlashcardDetails(currentCard);
     const meanings = currentCard.meanings.length
       ? currentCard.meanings.join(", ")
       : "No meaning found.";
@@ -740,21 +917,32 @@ export function FlashcardTrainer() {
                   label="Reading and meaning"
                   className="[transform:rotateY(180deg)]"
                 >
-                  <div className="mt-5 flex flex-col items-center gap-2">
-                    <p className="font-jp text-xl font-bold text-muted-foreground">
-                      {currentCard.word}
-                    </p>
-                    <p className="break-all font-jp text-4xl font-black leading-tight">
-                      {getCardReading(currentCard)}
-                    </p>
-                  </div>
-                  <p className="mt-5 max-w-xs text-base font-bold leading-relaxed">
-                    {meanings}
-                  </p>
-                  {partOfSpeech && (
-                    <p className="mt-5 rounded-base border-2 border-border bg-secondary px-3 py-1.5 text-xs font-black">
-                      {partOfSpeech}
-                    </p>
+                  {isCurrentCardHydrated ? (
+                    <>
+                      <div className="mt-5 flex flex-col items-center gap-2">
+                        <p className="font-jp text-xl font-bold text-muted-foreground">
+                          {currentCard.word}
+                        </p>
+                        <p className="break-all font-jp text-4xl font-black leading-tight">
+                          {getCardReading(currentCard)}
+                        </p>
+                      </div>
+                      <p className="mt-5 max-w-xs text-base font-bold leading-relaxed">
+                        {meanings}
+                      </p>
+                      {partOfSpeech && (
+                        <p className="mt-5 rounded-base border-2 border-border bg-secondary px-3 py-1.5 text-xs font-black">
+                          {partOfSpeech}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mt-5 flex max-w-xs flex-col items-center gap-4">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <p className="text-sm font-black uppercase tracking-[0.12em] text-muted-foreground">
+                        Loading from Jisho...
+                      </p>
+                    </div>
                   )}
                 </CardFace>
               </div>
