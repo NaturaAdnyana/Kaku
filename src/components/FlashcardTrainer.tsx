@@ -106,6 +106,12 @@ const DECK_OPTIONS = [
     icon: TrendingUp,
   },
   {
+    source: "today-random",
+    title: "Today's collected word/kanji",
+    description: "Practice words and kanji you searched today.",
+    icon: Clock,
+  },
+  {
     source: "jlpt-random",
     title: "Random JLPT word",
     description: "Choose N5 to N1, then train ten verbs from Jisho.",
@@ -700,7 +706,11 @@ export function FlashcardTrainer() {
     setSpeechMessage(null);
     clearSpeechMissedTimer();
 
-    const response = await getFlashcardDeck(source, options);
+    const clientTodayStart = new Date().setHours(0, 0, 0, 0);
+    const response = await getFlashcardDeck(source, {
+      ...options,
+      clientTodayStart,
+    });
 
     if ("error" in response) {
       setError(response.error ?? "Failed to fetch flashcard deck.");
@@ -717,7 +727,7 @@ export function FlashcardTrainer() {
     }
 
     const orderedDeck =
-      source === "recent" || source === "frequent" ? shuffleCards(deck) : deck;
+      source === "recent" || source === "frequent" || source === "today-random" ? shuffleCards(deck) : deck;
 
     const nextPending = orderedDeck.map((card, index) => ({
       ...card,

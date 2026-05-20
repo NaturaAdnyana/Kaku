@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { findBestJishoEntry, type JishoResponse } from "@/lib/jisho";
 import { kanji, userKanji, word, userWord, wordKanji } from "@/lib/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -25,7 +25,7 @@ export type KanjiApiDetails = {
   on_readings?: string[];
 };
 
-export type FlashcardDeckSource = "recent" | "frequent" | "jlpt-random";
+export type FlashcardDeckSource = "recent" | "frequent" | "jlpt-random" | "today-random";
 export type FlashcardJlptLevel = "n5" | "n4" | "n3" | "n2" | "n1";
 
 export type FlashcardItem = {
@@ -174,7 +174,7 @@ async function getRandomJlptFlashcards(level: FlashcardJlptLevel = "n2") {
 
 export async function getFlashcardDeck(
   source: FlashcardDeckSource,
-  options?: { jlptLevel?: FlashcardJlptLevel },
+  options?: { jlptLevel?: FlashcardJlptLevel; clientTodayStart?: number },
 ) {
   try {
     if (source === "jlpt-random") {
@@ -187,6 +187,51 @@ export async function getFlashcardDeck(
 
     if (!session || !session.user) {
       return { error: "Unauthorized" };
+    }
+
+    if (source === "today-random") {
+      const todayStart = options?.clientTodayStart
+        ? new Date(options.clientTodayStart)
+        : (() => {
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            return d;
+          })();
+
+      const words = await db
+        .select({
+          id: userWord.id,
+          word: word.word,
+          searchCount: userWord.searchCount,
+        })
+        .from(userWord)
+        .innerJoin(word, eq(userWord.wordId, word.id))
+        .where(
+          and(
+            eq(userWord.userId, session.user.id),
+            gte(userWord.updatedAt, todayStart)
+          )
+        );
+
+      const kanjis = await db
+        .select({
+          id: userKanji.id,
+          word: kanji.character,
+          searchCount: userKanji.searchCount,
+        })
+        .from(userKanji)
+        .innerJoin(kanji, eq(userKanji.kanjiId, kanji.id))
+        .where(
+          and(
+            eq(userKanji.userId, session.user.id),
+            gte(userKanji.updatedAt, todayStart)
+          )
+        );
+
+      const combined = [...words, ...kanjis];
+      const flashcards = combined.map(seedFlashcardFromSavedWord);
+
+      return { success: true, data: flashcards };
     }
 
     const seeds = await getSavedFlashcardSeeds(session.user.id, source);
