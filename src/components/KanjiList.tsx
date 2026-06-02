@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { getKanjiList, getWordList, deleteWord } from "@/app/actions/kanji";
+import { getFolders } from "@/app/actions/folder";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
@@ -74,6 +76,17 @@ export function KanjiList({
   );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("newest");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>(undefined);
+  const [selectedDateRange, setSelectedDateRange] = useState<"all" | "today" | "week" | "month">("all");
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ["folders"],
+    queryFn: async () => {
+      const res = await getFolders();
+      if ("error" in res) throw new Error(res.error);
+      return res.data || [];
+    },
+  });
 
   const { ref, inView } = useInView();
   const { collectionLabel, entityLabel, emptyLabel, searchPlaceholder } =
@@ -87,7 +100,7 @@ export function KanjiList({
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: [`${type}-list`, debouncedSearch, sortBy],
+    queryKey: [`${type}-list`, debouncedSearch, sortBy, selectedFolderId, selectedDateRange],
     queryFn: async ({ pageParam = 1 }) => {
       const getListFn = type === "kanji" ? getKanjiList : getWordList;
       const response = await getListFn(
@@ -95,6 +108,8 @@ export function KanjiList({
         LIST_PAGE_SIZE,
         debouncedSearch,
         sortBy,
+        selectedFolderId,
+        selectedDateRange,
       );
 
       if ("error" in response) {
@@ -170,9 +185,14 @@ export function KanjiList({
       <ListToolbar
         total={total}
         collectionLabel={collectionLabel}
-        showResultsLabel={Boolean(debouncedSearch)}
+        showResultsLabel={Boolean(debouncedSearch) || Boolean(selectedFolderId) || selectedDateRange !== "all"}
         sortBy={sortBy}
         onSortChange={setSortBy}
+        selectedFolderId={selectedFolderId}
+        onFolderChange={setSelectedFolderId}
+        selectedDateRange={selectedDateRange}
+        onDateRangeChange={setSelectedDateRange}
+        folders={folders}
       />
 
       {isLoading ? (

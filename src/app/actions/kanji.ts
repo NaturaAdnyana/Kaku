@@ -432,6 +432,8 @@ export async function getKanjiList(
   limit: number = 20,
   search?: string,
   sortBy: "newest" | "most-searched" = "newest",
+  folderId?: string,
+  dateRange?: "all" | "today" | "week" | "month",
 ) {
   try {
     const session = await auth.api.getSession({
@@ -445,11 +447,34 @@ export async function getKanjiList(
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
-    let whereClause: ReturnType<typeof and> | ReturnType<typeof eq> = eq(userKanji.userId, userId);
+    let whereClause: any = eq(userKanji.userId, userId);
     if (search) {
       whereClause = and(
         whereClause,
         sql`${kanji.character} LIKE ${`%${search}%`}`
+      );
+    }
+    if (folderId) {
+      whereClause = and(
+        whereClause,
+        sql`${kanji.character} IN (
+          select ${folderItem.wordValue} from ${folderItem} where ${folderItem.folderId} = ${folderId}
+        )`
+      );
+    }
+    if (dateRange && dateRange !== "all") {
+      const now = new Date();
+      let startDate = new Date();
+      if (dateRange === "today") {
+        startDate.setHours(0, 0, 0, 0);
+      } else if (dateRange === "week") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (dateRange === "month") {
+        startDate.setMonth(now.getMonth() - 1);
+      }
+      whereClause = and(
+        whereClause,
+        gte(userKanji.updatedAt, startDate)
       );
     }
 
@@ -509,6 +534,8 @@ export async function getWordList(
   limit: number = 20,
   search?: string,
   sortBy: "newest" | "most-searched" = "newest",
+  folderId?: string,
+  dateRange?: "all" | "today" | "week" | "month",
 ) {
   try {
     const session = await auth.api.getSession({
@@ -522,11 +549,34 @@ export async function getWordList(
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
-    let whereClause: ReturnType<typeof and> | ReturnType<typeof eq> = eq(userWord.userId, userId);
+    let whereClause: any = eq(userWord.userId, userId);
     if (search) {
       whereClause = and(
         whereClause,
         sql`${word.word} LIKE ${`%${search}%`}`
+      );
+    }
+    if (folderId) {
+      whereClause = and(
+        whereClause,
+        sql`${word.word} IN (
+          select ${folderItem.wordValue} from ${folderItem} where ${folderItem.folderId} = ${folderId}
+        )`
+      );
+    }
+    if (dateRange && dateRange !== "all") {
+      const now = new Date();
+      let startDate = new Date();
+      if (dateRange === "today") {
+        startDate.setHours(0, 0, 0, 0);
+      } else if (dateRange === "week") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (dateRange === "month") {
+        startDate.setMonth(now.getMonth() - 1);
+      }
+      whereClause = and(
+        whereClause,
+        gte(userWord.updatedAt, startDate)
       );
     }
 
