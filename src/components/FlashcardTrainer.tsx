@@ -22,6 +22,7 @@ import {
   Sparkles,
   TrendingUp,
   Trophy,
+  Folder,
   type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -35,6 +36,7 @@ import {
   type FlashcardItem,
   type FlashcardJlptLevel,
 } from "@/app/actions/kanji";
+import { getFolders } from "@/app/actions/folder";
 import { LottiePlayer } from "@/components/LottieCanvas";
 import { Button } from "@/components/ui/button";
 import { useLottieAnimation } from "@/hooks/useLottieAnimation";
@@ -44,6 +46,7 @@ import { toast } from "sonner";
 type TrainerStatus =
   | "choosing"
   | "choosing-jlpt"
+  | "choosing-folder"
   | "loading"
   | "playing"
   | "finished";
@@ -116,6 +119,12 @@ const DECK_OPTIONS = [
     title: "Random JLPT word",
     description: "Choose N5 to N1, then train ten verbs from Jisho.",
     icon: Shuffle,
+  },
+  {
+    source: "folder",
+    title: "Folder-based flashcard",
+    description: "Train words and kanji from a custom folder.",
+    icon: Folder,
   },
 ] satisfies {
   source: FlashcardDeckSource;
@@ -250,6 +259,8 @@ export function FlashcardTrainer() {
     useState<FlashcardDeckSource | null>(null);
   const [selectedJlptLevel, setSelectedJlptLevel] =
     useState<FlashcardJlptLevel>("n2");
+  const [folders, setFolders] = useState<{ id: string; name: string; itemCount: number }[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [pending, setPending] = useState<SessionCard[]>([]);
   const [completed, setCompleted] = useState<CompletedCard[]>([]);
   const [forgotCounts, setForgotCounts] = useState<Record<string, number>>({});
@@ -688,13 +699,16 @@ export function FlashcardTrainer() {
 
   async function startDeck(
     source: FlashcardDeckSource,
-    options?: { jlptLevel?: FlashcardJlptLevel },
+    options?: { jlptLevel?: FlashcardJlptLevel; folderId?: string },
   ) {
     stopSpeechRecognition();
     setStatus("loading");
     setSelectedSource(source);
     if (options?.jlptLevel) {
       setSelectedJlptLevel(options.jlptLevel);
+    }
+    if (options?.folderId) {
+      setSelectedFolderId(options.folderId);
     }
     setError(null);
     resetSpeechRestartGuard();
@@ -748,6 +762,23 @@ export function FlashcardTrainer() {
     speechEnabledRef.current = false;
     setSpeechEnabled(false);
     setStatus("playing");
+  }
+
+  async function fetchFolders() {
+    setStatus("loading");
+    try {
+      const res = await getFolders();
+      if (res.success && res.data) {
+        setFolders(res.data);
+        setStatus("choosing-folder");
+      } else {
+        setError(res.error || "Failed to load folders");
+        setStatus("choosing");
+      }
+    } catch (e) {
+      setError("An error occurred while loading folders.");
+      setStatus("choosing");
+    }
   }
 
   function finishIfDone(nextPending: SessionCard[]) {
@@ -868,6 +899,7 @@ export function FlashcardTrainer() {
     inflightHydrationWordsRef.current.clear();
     setStatus("choosing");
     setSelectedSource(null);
+    setSelectedFolderId(null);
     pendingRef.current = [];
     setPending([]);
     setCompleted([]);
@@ -1110,7 +1142,9 @@ export function FlashcardTrainer() {
                   selectedSource,
                   selectedSource === "jlpt-random"
                     ? { jlptLevel: selectedJlptLevel }
-                    : undefined,
+                    : selectedSource === "folder" && selectedFolderId
+                      ? { folderId: selectedFolderId }
+                      : undefined,
                 )
               }
             >
@@ -1127,6 +1161,63 @@ export function FlashcardTrainer() {
             Change
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (status === "choosing-folder") {
+    return (
+      <div className="animate-in fade-in zoom-in-95 duration-200">
+        <div className="mb-6 space-y-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground">
+            Folder deck
+          </p>
+          <h1 className="text-3xl font-black leading-tight text-foreground">
+            Pick a folder.
+          </h1>
+        </div>
+
+        {folders.length === 0 ? (
+          <div className="py-8 text-center border-2 border-dashed border-border rounded-base bg-secondary/20 shadow-shadow">
+            <p className="text-sm font-bold text-muted-foreground">No folders found</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              Go to any Word Details page to create a folder and add items to it.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {folders.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className="flex w-full items-center justify-between rounded-base border-2 border-border bg-blank p-4 text-left shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+                onClick={() => {
+                  setSelectedFolderId(f.id);
+                  void startDeck("folder", { folderId: f.id });
+                }}
+              >
+                <div>
+                  <span className="block text-sm font-black uppercase tracking-[0.08em]">
+                    {f.name}
+                  </span>
+                  <span className="mt-1 block text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    {f.itemCount} {f.itemCount === 1 ? "item" : "items"}
+                  </span>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Button
+          type="button"
+          variant="neutral"
+          className="mt-5 h-12 w-full font-black uppercase"
+          onClick={() => setStatus("choosing")}
+        >
+          Back
+        </Button>
       </div>
     );
   }
@@ -1202,6 +1293,13 @@ export function FlashcardTrainer() {
                   setSelectedSource(source);
                   setError(null);
                   setStatus("choosing-jlpt");
+                  return;
+                }
+
+                if (source === "folder") {
+                  setSelectedSource(source);
+                  setError(null);
+                  void fetchFolders();
                   return;
                 }
 

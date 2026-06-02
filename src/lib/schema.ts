@@ -110,3 +110,27 @@ export const wordKanji = pgTable("wordKanji", {
     .references(() => kanji.id, { onDelete: "cascade" }),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
+
+export const folder = pgTable("folder", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const folderItem = pgTable("folderItem", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  folderId: text("folderId")
+    .notNull()
+    .references(() => folder.id, { onDelete: "cascade" }),
+  wordValue: text("wordValue").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+

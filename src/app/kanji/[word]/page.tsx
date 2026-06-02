@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { WordDetailCard } from "@/components/WordDetailCard";
 import { DeleteWordButton } from "@/components/DeleteWordButton";
+import { AddToFolderButton } from "@/components/AddToFolderButton";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { URLTabs } from "@/components/URLTabs";
 import { KanjiBanner } from "@/components/KanjiBanner";
@@ -91,7 +92,8 @@ export default async function KanjiDetailPage({ params }: Props) {
         <div className="flex items-center justify-between mb-6">
           <BackButton className="mr-2 text-zinc-600 dark:text-zinc-400" />
           <h1 className="text-xl font-bold text-center">Word Details</h1>
-          <div className="min-w-10">
+          <div className="flex items-center gap-2">
+            <AddToFolderButton word={decodedWord} />
             <DeleteWordButton word={decodedWord} />
           </div>
         </div>

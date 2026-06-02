@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { findBestJishoEntry, type JishoResponse } from "@/lib/jisho";
-import { kanji, userKanji, word, userWord, wordKanji } from "@/lib/schema";
+import { kanji, userKanji, word, userWord, wordKanji, folderItem } from "@/lib/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -25,7 +25,7 @@ export type KanjiApiDetails = {
   on_readings?: string[];
 };
 
-export type FlashcardDeckSource = "recent" | "frequent" | "jlpt-random" | "today-random";
+export type FlashcardDeckSource = "recent" | "frequent" | "jlpt-random" | "today-random" | "folder";
 export type FlashcardJlptLevel = "n5" | "n4" | "n3" | "n2" | "n1";
 
 export type FlashcardItem = {
@@ -174,11 +174,34 @@ async function getRandomJlptFlashcards(level: FlashcardJlptLevel = "n2") {
 
 export async function getFlashcardDeck(
   source: FlashcardDeckSource,
-  options?: { jlptLevel?: FlashcardJlptLevel; clientTodayStart?: number },
+  options?: { jlptLevel?: FlashcardJlptLevel; clientTodayStart?: number; folderId?: string },
 ) {
   try {
     if (source === "jlpt-random") {
       return getRandomJlptFlashcards(options?.jlptLevel);
+    }
+
+    if (source === "folder") {
+      if (!options?.folderId) {
+        return { error: "Folder ID not specified" };
+      }
+
+      const items = await db
+        .select({
+          id: folderItem.id,
+          word: folderItem.wordValue,
+        })
+        .from(folderItem)
+        .where(eq(folderItem.folderId, options.folderId));
+
+      const flashcards = items.map((item) => ({
+        id: item.id,
+        word: item.word,
+        meanings: [],
+        partsOfSpeech: [],
+      }));
+
+      return { success: true, data: flashcards };
     }
 
     const session = await auth.api.getSession({
