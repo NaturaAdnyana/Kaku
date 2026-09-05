@@ -388,7 +388,7 @@ export function ChatPageClient({ initialWord }: ChatPageClientProps) {
   };
 
   return (
-    <div className="flex flex-col h-dvh bg-bg font-sans">
+    <div data-chat-page="true" className="flex flex-col h-dvh bg-bg font-sans">
       <main className="flex flex-col flex-1 min-h-0 w-full max-w-md mx-auto lg:max-w-xl jp-bg">
         {/* ── Header ── */}
         <div className="flex items-center justify-between p-4 border-b-2 border-border bg-secondary shrink-0">

@@ -19,7 +19,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-export function DeleteWordButton({ word }: { word: string }) {
+import { motion, AnimatePresence } from "framer-motion";
+
+interface DeleteWordButtonProps {
+  word: string;
+  initialDbData?: Awaited<ReturnType<typeof getKanjiByWord>> | null;
+}
+
+export function DeleteWordButton({ word, initialDbData }: DeleteWordButtonProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -27,6 +34,7 @@ export function DeleteWordButton({ word }: { word: string }) {
   const { data: dbData, isLoading } = useQuery({
     queryKey: ["kanji-dbData", word],
     queryFn: async () => await getKanjiByWord(word),
+    initialData: initialDbData ?? undefined,
   });
 
   const handleDelete = async () => {
@@ -50,11 +58,19 @@ export function DeleteWordButton({ word }: { word: string }) {
     }
   };
 
-  if (isLoading || !dbData?.kanji) return null;
+  const isSaved = !isLoading && !!(dbData && "kanji" in dbData && dbData.kanji);
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
+    <AnimatePresence>
+      {isSaved && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.15 }}
+        >
+          <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
           <Button
             variant="neutral"
             size="icon"
@@ -101,5 +117,9 @@ export function DeleteWordButton({ word }: { word: string }) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
+

@@ -163,8 +163,12 @@ export function BottomNav() {
   if (pathname === "/login") return null;
   if (isPublicPage && !session) return null;
 
-  const isChatRoute = pathname.endsWith("/chat");
-  const isLearnRoute = pathname.includes("/learn/");
+  const isChatRoute =
+    pathname === "/chat" ||
+    pathname.startsWith("/chat/") ||
+    pathname.endsWith("/chat") ||
+    pathname.includes("/chat");
+  const isLearnRoute = pathname.includes("/learn");
   if (isChatRoute || isLearnRoute) return null;
 
   const handleLogout = async () => {
@@ -197,6 +201,7 @@ export function BottomNav() {
     <>
       <div
         aria-hidden="true"
+        data-bottom-nav="true"
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-24 sm:h-28"
       >
         <span
@@ -205,7 +210,10 @@ export function BottomNav() {
         />
       </div>
 
-      <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-1rem)] max-w-md -translate-x-1/2 sm:bottom-6 sm:w-[95%]">
+      <div
+        data-bottom-nav="true"
+        className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-1rem)] max-w-md -translate-x-1/2 sm:bottom-6 sm:w-[95%]"
+      >
         <div className="relative w-full" ref={popoverRef}>
           {/* Main Nav */}
           <nav className="isolate flex w-full min-w-0 items-center justify-around gap-1 rounded-base border-2 border-border bg-blank p-1.5 shadow-shadow transition-all sm:gap-2 sm:p-2">

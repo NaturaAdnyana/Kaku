@@ -17,6 +17,7 @@ interface KanjiBannerProps {
       reading?: string;
     }>;
   } | null;
+  initialDbData?: Awaited<ReturnType<typeof getKanjiByWord>> | null;
 }
 
 const bannerActionButtonClass =
@@ -53,7 +54,7 @@ function KanjiSVG({ svgContent }: { svgContent: string }) {
   );
 }
 
-export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
+export function KanjiBanner({ decodedWord, apiEntry, initialDbData }: KanjiBannerProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const wordChars = Array.from(decodedWord);
   const isSingleKanji = wordChars.length === 1 && isKanji(wordChars[0]);
@@ -62,9 +63,12 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
   const { data: dbData } = useQuery({
     queryKey: ["kanji-dbData", decodedWord],
     queryFn: () => getKanjiByWord(decodedWord),
+    initialData: initialDbData ?? undefined,
     enabled: decodedWord.length > 0,
     staleTime: 1000 * 60 * 5,
   });
+
+  const savedKanji = dbData && "kanji" in dbData ? dbData.kanji : null;
 
   // SVG Data
   const { animations } = useSvgAnimations(decodedWord);
@@ -151,13 +155,13 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
           <span className="text-sm font-bold">Ask Koijo</span>
         </Link>
 
-        {dbData?.kanji && dbData.kanji.searchCount > 1 && (
+        {savedKanji && savedKanji.searchCount > 1 && (
           <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-base bg-secondary text-foreground shadow-[2px_2px_0_var(--border)] border-2 border-border flex items-center gap-1.5">
             <span className="text-[10px] uppercase font-bold tracking-widest">
               Searched
             </span>
             <span className="text-xs font-black">
-              {dbData.kanji.searchCount}x
+              {savedKanji.searchCount}x
             </span>
           </div>
         )}
@@ -217,13 +221,13 @@ export function KanjiBanner({ decodedWord, apiEntry }: KanjiBannerProps) {
             <span className="text-sm font-bold">Ask Koijo</span>
           </Link>
 
-          {dbData?.kanji && dbData.kanji.searchCount > 1 && (
+          {savedKanji && savedKanji.searchCount > 1 && (
             <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-base bg-secondary text-foreground shadow-[2px_2px_0_var(--border)] border-2 border-border flex items-center gap-1.5">
               <span className="text-[10px] uppercase font-bold tracking-widest">
                 Searched
               </span>
               <span className="text-xs font-black">
-                {dbData.kanji.searchCount}x
+                {savedKanji.searchCount}x
               </span>
             </div>
           )}

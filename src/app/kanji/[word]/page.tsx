@@ -5,7 +5,7 @@ import { AddToFolderButton } from "@/components/AddToFolderButton";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { URLTabs } from "@/components/URLTabs";
 import { KanjiBanner } from "@/components/KanjiBanner";
-import { getWordsForKanji } from "@/app/actions/kanji";
+import { getWordsForKanji, getKanjiByWord } from "@/app/actions/kanji";
 import { Suspense } from "react";
 import { TabPendingContent } from "@/components/TabPendingContent";
 import { findBestJishoEntry, type JishoEntry, type JishoResponse } from "@/lib/jisho";
@@ -79,9 +79,10 @@ export default async function KanjiDetailPage({ params }: Props) {
   const decodedWord = decodeURIComponent(word);
   const isSingleKanji = decodedWord.length === 1;
 
-  const [allResults, kanjiApiEntry] = await Promise.all([
+  const [allResults, kanjiApiEntry, dbData] = await Promise.all([
     getJishoResults(decodedWord),
     getKanjiDetails(decodedWord, isSingleKanji),
+    getKanjiByWord(decodedWord),
   ]);
   const apiEntry = findBestJishoEntry(allResults, decodedWord);
 
@@ -94,13 +95,17 @@ export default async function KanjiDetailPage({ params }: Props) {
           <h1 className="text-xl font-bold text-center">Word Details</h1>
           <div className="flex items-center gap-2">
             <AddToFolderButton word={decodedWord} />
-            <DeleteWordButton word={decodedWord} />
+            <DeleteWordButton word={decodedWord} initialDbData={dbData} />
           </div>
         </div>
 
         <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
           {/* Word Banner */}
-          <KanjiBanner decodedWord={decodedWord} apiEntry={apiEntry} />
+          <KanjiBanner
+            decodedWord={decodedWord}
+            apiEntry={apiEntry}
+            initialDbData={dbData}
+          />
 
           {isSingleKanji ? (
             <>

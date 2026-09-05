@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { findBestJishoEntry, type JishoResponse } from "@/lib/jisho";
 import { kanji, userKanji, word, userWord, wordKanji, folderItem } from "@/lib/schema";
-import { eq, and, desc, sql, gte } from "drizzle-orm";
+import { eq, and, desc, sql, gte, type SQL } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -447,7 +447,7 @@ export async function getKanjiList(
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
-    let whereClause: any = eq(userKanji.userId, userId);
+    let whereClause: SQL | undefined = eq(userKanji.userId, userId);
     if (search) {
       whereClause = and(
         whereClause,
@@ -464,7 +464,7 @@ export async function getKanjiList(
     }
     if (dateRange && dateRange !== "all") {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       if (dateRange === "today") {
         startDate.setHours(0, 0, 0, 0);
       } else if (dateRange === "week") {
@@ -549,7 +549,7 @@ export async function getWordList(
     const userId = session.user.id;
     const offset = (page - 1) * limit;
 
-    let whereClause: any = eq(userWord.userId, userId);
+    let whereClause: SQL | undefined = eq(userWord.userId, userId);
     if (search) {
       whereClause = and(
         whereClause,
@@ -566,7 +566,7 @@ export async function getWordList(
     }
     if (dateRange && dateRange !== "all") {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       if (dateRange === "today") {
         startDate.setHours(0, 0, 0, 0);
       } else if (dateRange === "week") {
